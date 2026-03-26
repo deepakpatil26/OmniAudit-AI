@@ -1,0 +1,60 @@
+{
+  "entities": {
+    "Audit": {
+      "title": "Audit",
+      "description": "A compliance audit for a product listing.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "productName": { "type": "string" },
+        "productDescription": { "type": "string" },
+        "region": { "type": "string", "enum": ["EU", "USA", "APAC", "INDIA"] },
+        "complianceScore": { "type": "number" },
+        "riskSummary": { "type": "string" },
+        "productImage": { "type": "string", "description": "Base64 encoded product image" },
+        "status": { "type": "string", "enum": ["pending", "processing", "completed", "failed"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "claim": { "type": "string" },
+              "evidence": { "type": "string" },
+              "status": { "type": "string", "enum": ["verified", "discrepancy", "unverified"] },
+              "reasoning": { "type": "string" },
+              "legalReference": { "type": "string" },
+              "correctiveAction": { "type": "string" },
+              "visualFixPrompt": { "type": "string" }
+            }
+          }
+        },
+        "thoughtSignature": { "type": "string" }
+      },
+      "required": ["userId", "status", "createdAt"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "admin"] }
+      },
+      "required": ["uid", "email"]
+    }
+  },
+  "firestore": {
+    "/audits/{auditId}": {
+      "schema": "Audit",
+      "description": "Collection of product compliance audits."
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles."
+    }
+  }
+}
