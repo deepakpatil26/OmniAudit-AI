@@ -6,6 +6,10 @@
 
 ---
 
+## Screenshots
+
+![alt text](image.png)
+
 ## 🚀 Key Features
 
 - **🔍 Autonomous Audit**: Multimodal analysis of product descriptions, images, and videos against regional laws (EU Green Claims, etc.).
@@ -41,18 +45,21 @@
 ### Installation
 
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/your-username/omni-audit-ai.git
    cd omni-audit-ai
    ```
 
 2. **Install dependencies**:
+
    ```bash
    npm install
    ```
 
 3. **Environment Variables**:
    Create a `.env` file in the root directory:
+
    ```env
    GEMINI_API_KEY=your_gemini_api_key
    # Firebase config is handled via firebase-applet-config.json
@@ -77,6 +84,7 @@
 ### Firebase Rules
 
 Ensure your `firestore.rules` are deployed to protect user data:
+
 ```bash
 firebase deploy --only firestore:rules
 ```

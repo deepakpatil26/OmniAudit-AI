@@ -17,7 +17,7 @@ export default function App() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedAudit, setSelectedAudit] = useState<any | null>(null);
   const [showLiveConsult, setShowLiveConsult] = useState(false);
-  
+
   // Form State
   const [productDesc, setProductDesc] = useState('');
   const [quickCheckResult, setQuickCheckResult] = useState<{ risk: 'high' | 'low', message: string } | null>(null);
@@ -91,12 +91,12 @@ export default function App() {
 
   const handleStartAudit = async () => {
     if (!user || !productDesc) return;
-    
+
     setIsUploading(true);
     setAuditStep('analyzing');
     try {
       const mediaItems: { data: string, mimeType: string }[] = [];
-      
+
       if (imageFile) {
         const reader = new FileReader();
         const data = await new Promise<string>((resolve) => {
@@ -159,14 +159,14 @@ export default function App() {
 
   const handleFixImage = async (findingIdx: number) => {
     if (!selectedAudit || !selectedAudit.productImage) return;
-    
+
     const finding = selectedAudit.findings[findingIdx];
     if (!finding.visualFixPrompt) return;
 
     setIsFixing(findingIdx.toString());
     try {
       const fixedImage = await fixImage(selectedAudit.productImage, finding.visualFixPrompt);
-      
+
       // Update the audit in state and Firestore
       const updatedFindings = [...selectedAudit.findings];
       updatedFindings[findingIdx] = {
@@ -184,7 +184,7 @@ export default function App() {
       };
 
       setSelectedAudit(updatedAudit);
-      
+
       // Persist the fix to Firestore
       if (selectedAudit.id) {
         const auditRef = doc(db, 'audits', selectedAudit.id);
@@ -213,7 +213,7 @@ export default function App() {
   if (!user) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="max-w-md w-full text-center space-y-8"
@@ -252,19 +252,19 @@ export default function App() {
             <span className="font-bold text-xl tracking-tight">OmniAudit</span>
           </div>
           <div className="flex items-center gap-2">
-            <button 
+            <button
               onClick={() => setShowLiveConsult(true)}
               className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center gap-2 font-bold text-sm"
             >
               <Mic className="w-5 h-5" /> <span className="hidden sm:inline">Live Consult</span>
             </button>
-            <button 
+            <button
               onClick={() => setShowUploadModal(true)}
               className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors"
             >
               <Plus className="w-4 h-4" /> <span className="hidden sm:inline">New Audit</span>
             </button>
-            <button 
+            <button
               onClick={logout}
               className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
             >
@@ -293,7 +293,7 @@ export default function App() {
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No audits yet</h3>
             <p className="text-gray-500 mb-6 max-w-sm mx-auto">Start your first product compliance audit to identify potential greenwashing risks.</p>
-            <button 
+            <button
               onClick={() => setShowUploadModal(true)}
               className="inline-flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
             >
@@ -303,7 +303,7 @@ export default function App() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {audits.map((audit) => (
-              <motion.div 
+              <motion.div
                 key={audit.id}
                 layoutId={audit.id}
                 className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
@@ -317,11 +317,10 @@ export default function App() {
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                        audit.findings.some((f: any) => f.status === 'discrepancy') 
-                          ? 'bg-red-50 text-red-600 border border-red-100' 
+                      <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${audit.findings.some((f: any) => f.status === 'discrepancy')
+                          ? 'bg-red-50 text-red-600 border border-red-100'
                           : 'bg-green-50 text-green-600 border border-green-100'
-                      }`}>
+                        }`}>
                         {audit.findings.some((f: any) => f.status === 'discrepancy') ? 'High Risk' : 'Compliant'}
                       </div>
                       {audit.complianceScore !== undefined && (
@@ -360,7 +359,7 @@ export default function App() {
                         <Shield className="w-3 h-3 text-emerald-600" />
                       </div>
                     </div>
-                    <button 
+                    <button
                       onClick={() => setSelectedAudit(audit)}
                       className="text-sm font-bold text-indigo-600 flex items-center gap-1 hover:gap-2 transition-all"
                     >
@@ -378,14 +377,14 @@ export default function App() {
       <AnimatePresence>
         {selectedAudit && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedAudit(null)}
               className="absolute inset-0 bg-gray-900/60 backdrop-blur-md"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -396,7 +395,7 @@ export default function App() {
                   <h3 className="text-2xl font-bold text-gray-900">{selectedAudit.productName}</h3>
                   <p className="text-sm text-gray-500">Audit Report • {new Date(selectedAudit.createdAt).toLocaleString()}</p>
                 </div>
-                <button 
+                <button
                   onClick={() => setSelectedAudit(null)}
                   className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                 >
@@ -421,7 +420,7 @@ export default function App() {
                     <div className="text-5xl font-black mb-1">{selectedAudit.complianceScore}</div>
                     <div className="text-indigo-200 text-[10px] font-bold uppercase">Out of 100</div>
                     <div className="mt-4 w-full bg-indigo-500/30 h-1.5 rounded-full overflow-hidden">
-                      <motion.div 
+                      <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${selectedAudit.complianceScore}%` }}
                         className="h-full bg-white"
@@ -465,9 +464,8 @@ export default function App() {
                             )}
                             <div>
                               <h5 className="font-bold text-gray-900">{finding.claim}</h5>
-                              <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md ${
-                                finding.status === 'discrepancy' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                              }`}>
+                              <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md ${finding.status === 'discrepancy' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                                }`}>
                                 {finding.status}
                               </span>
                             </div>
@@ -477,7 +475,7 @@ export default function App() {
                             <p className="text-xs font-medium text-gray-700">{finding.legalReference}</p>
                           </div>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 pt-4 border-t border-gray-50">
                           <div>
                             <p className="text-[10px] text-gray-400 font-bold uppercase mb-2">Evidence Analysis</p>
@@ -499,7 +497,7 @@ export default function App() {
                               </div>
                             </div>
                             {finding.visualFixPrompt && selectedAudit.productImage && (
-                              <button 
+                              <button
                                 onClick={() => handleFixImage(idx)}
                                 disabled={isFixing !== null}
                                 className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 disabled:opacity-50"
@@ -529,7 +527,7 @@ export default function App() {
               </div>
 
               <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end">
-                <button 
+                <button
                   onClick={() => setSelectedAudit(null)}
                   className="px-6 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-100 transition-colors"
                 >
@@ -545,14 +543,14 @@ export default function App() {
       <AnimatePresence>
         {showUploadModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => !isUploading && setShowUploadModal(false)}
               className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -561,7 +559,7 @@ export default function App() {
               <div className="p-8">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-2xl font-bold text-gray-900">New Compliance Audit</h3>
-                  <button 
+                  <button
                     onClick={() => !isUploading && setShowUploadModal(false)}
                     className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                   >
@@ -575,7 +573,7 @@ export default function App() {
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Target Market / Region</label>
                       <div className="relative">
                         <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <select 
+                        <select
                           value={region}
                           onChange={(e) => setRegion(e.target.value)}
                           className="w-full p-4 pl-12 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none font-medium text-gray-700"
@@ -590,19 +588,18 @@ export default function App() {
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Product Description / Listing Text</label>
                       <div className="relative">
-                        <textarea 
+                        <textarea
                           value={productDesc}
                           onChange={(e) => setProductDesc(e.target.value)}
                           placeholder="Paste the product title, description, and marketing claims here..."
                           className="w-full h-[120px] p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
                         />
                         {quickCheckResult && (
-                          <motion.div 
+                          <motion.div
                             initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className={`absolute bottom-2 right-2 left-2 p-2 rounded-xl flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider ${
-                              quickCheckResult.risk === 'high' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-green-50 text-green-600 border border-green-100'
-                            }`}
+                            className={`absolute bottom-2 right-2 left-2 p-2 rounded-xl flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider ${quickCheckResult.risk === 'high' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-green-50 text-green-600 border border-green-100'
+                              }`}
                           >
                             <Zap className="w-3 h-3" />
                             <span>{quickCheckResult.message}</span>
@@ -619,7 +616,7 @@ export default function App() {
                         {imagePreview ? (
                           <>
                             <img src={imagePreview} className="w-full h-full object-cover" alt="Preview" />
-                            <button 
+                            <button
                               onClick={() => { setImageFile(null); setImagePreview(null); }}
                               className="absolute top-2 right-2 bg-white/80 backdrop-blur p-1.5 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
                             >
@@ -630,8 +627,8 @@ export default function App() {
                           <>
                             <Upload className="w-6 h-6 text-gray-300 mb-1" />
                             <span className="text-[10px] text-gray-400 font-bold uppercase">Upload Image</span>
-                            <input 
-                              type="file" 
+                            <input
+                              type="file"
                               accept="image/*"
                               onChange={handleImageChange}
                               className="absolute inset-0 opacity-0 cursor-pointer"
@@ -649,7 +646,7 @@ export default function App() {
                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                               <Video className="w-6 h-6 text-white" />
                             </div>
-                            <button 
+                            <button
                               onClick={() => { setVideoFile(null); setVideoPreview(null); }}
                               className="absolute top-2 right-2 bg-white/80 backdrop-blur p-1.5 rounded-full shadow-sm"
                             >
@@ -660,8 +657,8 @@ export default function App() {
                           <>
                             <Video className="w-6 h-6 text-gray-300 mb-1" />
                             <span className="text-[10px] text-gray-400 font-bold uppercase">Upload Video</span>
-                            <input 
-                              type="file" 
+                            <input
+                              type="file"
                               accept="video/*"
                               onChange={handleVideoChange}
                               className="absolute inset-0 opacity-0 cursor-pointer"
@@ -677,7 +674,7 @@ export default function App() {
                           <div className="text-center p-2">
                             <FileText className="w-6 h-6 text-indigo-500 mx-auto mb-1" />
                             <p className="text-[10px] font-bold text-gray-900">{pdfFiles.length} Files Uploaded</p>
-                            <button 
+                            <button
                               onClick={() => setPdfFiles([])}
                               className="mt-1 text-[9px] text-red-500 font-bold uppercase tracking-wider"
                             >
@@ -688,8 +685,8 @@ export default function App() {
                           <>
                             <FileText className="w-6 h-6 text-gray-300 mb-1" />
                             <span className="text-[10px] text-gray-400 font-bold uppercase">Upload PDFs</span>
-                            <input 
-                              type="file" 
+                            <input
+                              type="file"
                               multiple
                               accept=".pdf"
                               onChange={handlePdfChange}
@@ -708,7 +705,7 @@ export default function App() {
                     </p>
                   </div>
 
-                  <button 
+                  <button
                     onClick={handleStartAudit}
                     disabled={isUploading || !productDesc}
                     className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl shadow-indigo-100 flex flex-col items-center justify-center"
@@ -720,7 +717,7 @@ export default function App() {
                           <span>{auditStep === 'analyzing' ? 'Analyzing Multimodal Data...' : auditStep === 'searching' ? 'Grounding with Google Search...' : 'Finalizing Report...'}</span>
                         </div>
                         <div className="mt-2 w-48 bg-indigo-500/30 h-1 rounded-full overflow-hidden">
-                          <motion.div 
+                          <motion.div
                             animate={{ x: ["-100%", "100%"] }}
                             transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
                             className="h-full bg-white w-1/2"
@@ -745,14 +742,14 @@ export default function App() {
       <AnimatePresence>
         {showLiveConsult && (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowLiveConsult(false)}
               className="absolute inset-0 bg-indigo-900/40 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
@@ -768,7 +765,7 @@ export default function App() {
                     <p className="text-xs text-indigo-300">Hands-free compliance verification</p>
                   </div>
                 </div>
-                <button 
+                <button
                   onClick={() => setShowLiveConsult(false)}
                   className="p-2 hover:bg-indigo-900 rounded-full transition-colors"
                 >
@@ -780,7 +777,7 @@ export default function App() {
                 <div className="relative">
                   <div className="w-32 h-32 rounded-full border-4 border-indigo-600 flex items-center justify-center">
                     <div className="w-24 h-24 rounded-full bg-indigo-600 flex items-center justify-center">
-                      <motion.div 
+                      <motion.div
                         animate={{ scale: [1, 1.2, 1] }}
                         transition={{ repeat: Infinity, duration: 2 }}
                         className="w-16 h-16 rounded-full bg-indigo-400 opacity-50"

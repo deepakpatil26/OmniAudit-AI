@@ -1,6 +1,6 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type } from '@google/genai';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 export interface AuditFinding {
   claim: string;
@@ -23,11 +23,11 @@ export interface AuditReport {
 export async function performAudit(
   productDescription: string,
   region: string,
-  mediaItems: { data: string, mimeType: string }[] = [],
-  dossierTexts: string[] = []
+  mediaItems: { data: string; mimeType: string }[] = [],
+  dossierTexts: string[] = [],
 ): Promise<AuditReport> {
-  const model = "gemini-3.1-pro-preview";
-  
+  const model = 'gemini-3.1-pro-preview';
+
   const systemInstruction = `
     You are OmniAudit AI v2.0, a Lead AI Compliance Engineer specializing in Long-Context and Multimodal Agents.
     Your goal is to audit product listings (text, images, videos) for "Greenwashing" and regional legal compliance.
@@ -53,23 +53,23 @@ export async function performAudit(
     
     Product Description: ${productDescription}
     
-    ${dossierTexts.length > 0 ? `Supplier Dossier (Multiple Documents):\n${dossierTexts.join('\n---\n')}` : "No supplier dossier provided."}
+    ${dossierTexts.length > 0 ? `Supplier Dossier (Multiple Documents):\n${dossierTexts.join('\n---\n')}` : 'No supplier dossier provided.'}
     
     Please perform the audit and return the findings in JSON format.
   `;
 
   const contents = [];
   const parts: any[] = [{ text: prompt }];
-  
-  mediaItems.forEach(item => {
+
+  mediaItems.forEach((item) => {
     parts.push({
       inlineData: {
         mimeType: item.mimeType,
-        data: item.data.split(',')[1] || item.data
-      }
+        data: item.data.split(',')[1] || item.data,
+      },
     });
   });
-  
+
   contents.push({ parts });
 
   const response = await ai.models.generateContent({
@@ -77,7 +77,7 @@ export async function performAudit(
     contents,
     config: {
       systemInstruction,
-      responseMimeType: "application/json",
+      responseMimeType: 'application/json',
       tools: [{ googleSearch: {} }],
       responseSchema: {
         type: Type.OBJECT,
@@ -92,64 +92,86 @@ export async function performAudit(
               properties: {
                 claim: { type: Type.STRING },
                 evidence: { type: Type.STRING },
-                status: { type: Type.STRING, enum: ["verified", "discrepancy", "unverified"] },
+                status: {
+                  type: Type.STRING,
+                  enum: ['verified', 'discrepancy', 'unverified'],
+                },
                 reasoning: { type: Type.STRING },
                 legalReference: { type: Type.STRING },
                 correctiveAction: { type: Type.STRING },
-                visualFixPrompt: { type: Type.STRING }
+                visualFixPrompt: { type: Type.STRING },
               },
-              required: ["claim", "evidence", "status", "reasoning", "legalReference"]
-            }
+              required: [
+                'claim',
+                'evidence',
+                'status',
+                'reasoning',
+                'legalReference',
+              ],
+            },
           },
-          thoughtSignature: { type: Type.STRING }
+          thoughtSignature: { type: Type.STRING },
         },
-        required: ["productName", "complianceScore", "riskSummary", "findings", "thoughtSignature"]
-      }
-    }
+        required: [
+          'productName',
+          'complianceScore',
+          'riskSummary',
+          'findings',
+          'thoughtSignature',
+        ],
+      },
+    },
   });
 
-  return JSON.parse(response.text || "{}");
+  return JSON.parse(response.text || '{}');
 }
 
-export async function quickCheck(text: string): Promise<{ risk: 'high' | 'low', message: string } | null> {
+export async function quickCheck(
+  text: string,
+): Promise<{ risk: 'high' | 'low'; message: string } | null> {
   if (text.length < 10) return null;
-  
-  const model = "gemini-3.1-flash-lite-preview";
+
+  const model = 'gemini-3.1-flash-lite-preview';
   const response = await ai.models.generateContent({
     model,
     contents: `Analyze this product title/description for immediate greenwashing red flags (e.g., "100% eco", "totally natural" without proof). Return JSON: { "risk": "high" | "low", "message": "short warning or ok" }. Text: ${text}`,
     config: {
-      responseMimeType: "application/json",
+      responseMimeType: 'application/json',
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          risk: { type: Type.STRING, enum: ["high", "low"] },
-          message: { type: Type.STRING }
+          risk: { type: Type.STRING, enum: ['high', 'low'] },
+          message: { type: Type.STRING },
         },
-        required: ["risk", "message"]
-      }
-    }
+        required: ['risk', 'message'],
+      },
+    },
   });
 
-  return JSON.parse(response.text || "{}");
+  return JSON.parse(response.text || '{}');
 }
 
-export async function fixImage(imageBase64: string, fixPrompt: string): Promise<string> {
-  const model = "gemini-3.1-flash-image-preview";
-  
+export async function fixImage(
+  imageBase64: string,
+  fixPrompt: string,
+): Promise<string> {
+  const model = 'gemini-3.1-flash-image-preview';
+
   const response = await ai.models.generateContent({
     model,
     contents: {
       parts: [
         {
           inlineData: {
-            mimeType: "image/jpeg",
-            data: imageBase64.split(',')[1] || imageBase64
-          }
+            mimeType: 'image/jpeg',
+            data: imageBase64.split(',')[1] || imageBase64,
+          },
         },
-        { text: `Semantically edit this image according to this instruction: ${fixPrompt}. Maintain subject consistency and professional quality.` }
-      ]
-    }
+        {
+          text: `Semantically edit this image according to this instruction: ${fixPrompt}. Maintain subject consistency and professional quality.`,
+        },
+      ],
+    },
   });
 
   for (const part of response.candidates?.[0]?.content?.parts || []) {
@@ -157,6 +179,6 @@ export async function fixImage(imageBase64: string, fixPrompt: string): Promise<
       return `data:image/png;base64,${part.inlineData.data}`;
     }
   }
-  
-  throw new Error("Failed to generate fixed image");
+
+  throw new Error('Failed to generate fixed image');
 }
