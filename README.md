@@ -47,8 +47,8 @@
 1. **Clone the repository**:
 
    ```bash
-   git clone https://github.com/your-username/omni-audit-ai.git
-   cd omni-audit-ai
+   git clone https://github.com/deepakpatil26/OmniAudit-AI.git
+   cd OmniAudit-AI
    ```
 
 2. **Install dependencies**:

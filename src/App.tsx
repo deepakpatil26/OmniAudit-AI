@@ -554,19 +554,19 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden"
+              className="relative bg-white w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col"
             >
-              <div className="p-8">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900">New Compliance Audit</h3>
-                  <button
-                    onClick={() => !isUploading && setShowUploadModal(false)}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                  >
-                    <Plus className="w-6 h-6 rotate-45 text-gray-400" />
-                  </button>
-                </div>
+              <div className="p-6 sm:p-8 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
+                <h3 className="text-2xl font-bold text-gray-900">New Compliance Audit</h3>
+                <button
+                  onClick={() => !isUploading && setShowUploadModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <Plus className="w-6 h-6 rotate-45 text-gray-400" />
+                </button>
+              </div>
 
+              <div className="flex-1 overflow-y-auto p-6 sm:p-8">
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -701,37 +701,39 @@ export default function App() {
                   <div className="bg-indigo-50 p-4 rounded-2xl flex gap-3">
                     <Info className="w-5 h-5 text-indigo-600 shrink-0" />
                     <p className="text-xs text-indigo-700 leading-relaxed">
-                      OmniAudit AI will use <strong>Gemini 3.1 Pro</strong> to cross-reference these inputs with real-time global regulations via Google Search Grounding.
+                      OmniAudit AI will use <strong>Gemini 1.5 Pro</strong> to cross-reference these inputs with real-time global regulations via Google Search Grounding.
                     </p>
                   </div>
-
-                  <button
-                    onClick={handleStartAudit}
-                    disabled={isUploading || !productDesc}
-                    className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl shadow-indigo-100 flex flex-col items-center justify-center"
-                  >
-                    {isUploading ? (
-                      <>
-                        <div className="flex items-center gap-2">
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          <span>{auditStep === 'analyzing' ? 'Analyzing Multimodal Data...' : auditStep === 'searching' ? 'Grounding with Google Search...' : 'Finalizing Report...'}</span>
-                        </div>
-                        <div className="mt-2 w-48 bg-indigo-500/30 h-1 rounded-full overflow-hidden">
-                          <motion.div
-                            animate={{ x: ["-100%", "100%"] }}
-                            transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-                            className="h-full bg-white w-1/2"
-                          />
-                        </div>
-                      </>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <Search className="w-5 h-5" />
-                        <span>Run Autonomous Audit</span>
-                      </div>
-                    )}
-                  </button>
                 </div>
+              </div>
+
+              <div className="p-6 sm:p-8 bg-gray-50 border-t border-gray-100">
+                <button
+                  onClick={handleStartAudit}
+                  disabled={isUploading || !productDesc}
+                  className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl shadow-indigo-100 flex flex-col items-center justify-center"
+                >
+                  {isUploading ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>{auditStep === 'analyzing' ? 'Analyzing Multimodal Data...' : auditStep === 'searching' ? 'Grounding with Google Search...' : 'Finalizing Report...'}</span>
+                      </div>
+                      <div className="mt-2 w-48 bg-indigo-500/30 h-1 rounded-full overflow-hidden">
+                        <motion.div
+                          animate={{ x: ["-100%", "100%"] }}
+                          transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                          className="h-full bg-white w-1/2"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Search className="w-5 h-5" />
+                      <span>Run Autonomous Audit</span>
+                    </div>
+                  )}
+                </button>
               </div>
             </motion.div>
           </div>

@@ -26,7 +26,7 @@ export async function performAudit(
   mediaItems: { data: string; mimeType: string }[] = [],
   dossierTexts: string[] = [],
 ): Promise<AuditReport> {
-  const model = 'gemini-3.1-pro-preview';
+  const model = 'gemini-1.5-pro';
 
   const systemInstruction = `
     You are OmniAudit AI v2.0, a Lead AI Compliance Engineer specializing in Long-Context and Multimodal Agents.
@@ -131,7 +131,7 @@ export async function quickCheck(
 ): Promise<{ risk: 'high' | 'low'; message: string } | null> {
   if (text.length < 10) return null;
 
-  const model = 'gemini-3.1-flash-lite-preview';
+  const model = 'gemini-1.5-flash';
   const response = await ai.models.generateContent({
     model,
     contents: `Analyze this product title/description for immediate greenwashing red flags (e.g., "100% eco", "totally natural" without proof). Return JSON: { "risk": "high" | "low", "message": "short warning or ok" }. Text: ${text}`,
@@ -155,7 +155,7 @@ export async function fixImage(
   imageBase64: string,
   fixPrompt: string,
 ): Promise<string> {
-  const model = 'gemini-3.1-flash-image-preview';
+  const model = 'gemini-1.5-flash';
 
   const response = await ai.models.generateContent({
     model,
