@@ -8,7 +8,7 @@
 
 ## Screenshots
 
-![alt text](image.png)
+![Dashboard](public/Dashboard.png)
 
 ## 🚀 Key Features
 
