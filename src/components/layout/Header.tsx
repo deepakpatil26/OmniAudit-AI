@@ -8,9 +8,12 @@ interface HeaderProps {
   onShowUploadModal: () => void;
   onShowHistory?: () => void;
   onShowFeatures?: () => void;
+  onOpenProfile: () => void;
+  onOpenUpdates: () => void;
+  onOpenSettings: () => void;
   onLogout: () => void;
   isLoggedIn: boolean;
-  currentView?: 'landing' | 'dashboard' | 'auth';
+  currentView?: 'landing' | 'dashboard' | 'auth' | 'profile' | 'updates' | 'settings';
   user: User | null;
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
@@ -21,6 +24,9 @@ export const Header: React.FC<HeaderProps> = ({
   onShowUploadModal,
   onShowHistory,
   onShowFeatures,
+  onOpenProfile,
+  onOpenUpdates,
+  onOpenSettings,
   onLogout,
   isLoggedIn,
   currentView,
@@ -89,7 +95,10 @@ export const Header: React.FC<HeaderProps> = ({
                 user={user} 
                 onLogout={onLogout} 
                 isDarkMode={isDarkMode} 
-                onToggleDarkMode={onToggleDarkMode} 
+                onToggleDarkMode={onToggleDarkMode}
+                onOpenProfile={onOpenProfile}
+                onOpenUpdates={onOpenUpdates}
+                onOpenSettings={onOpenSettings}
               />
             </div>
           )}

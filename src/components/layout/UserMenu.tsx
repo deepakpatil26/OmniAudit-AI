@@ -8,13 +8,19 @@ interface UserMenuProps {
   onLogout: () => void;
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
+  onOpenProfile: () => void;
+  onOpenUpdates: () => void;
+  onOpenSettings: () => void;
 }
 
 export const UserMenu: React.FC<UserMenuProps> = ({
   user,
   onLogout,
   isDarkMode,
-  onToggleDarkMode
+  onToggleDarkMode,
+  onOpenProfile,
+  onOpenUpdates,
+  onOpenSettings,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -71,6 +77,10 @@ export const UserMenu: React.FC<UserMenuProps> = ({
 
             <div className='p-2'>
               <button
+                onClick={() => {
+                  setIsOpen(false);
+                  onOpenProfile();
+                }}
                 className='w-full flex items-center justify-between px-4 py-3 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors group'>
                 <div className='flex items-center gap-3'>
                   <UserIcon className='w-4 h-4 text-gray-400 group-hover:text-indigo-500 transition-colors' />
@@ -103,6 +113,10 @@ export const UserMenu: React.FC<UserMenuProps> = ({
               </button>
 
               <button
+                onClick={() => {
+                  setIsOpen(false);
+                  onOpenUpdates();
+                }}
                 className='w-full flex items-center justify-between px-4 py-3 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors group'>
                 <div className='flex items-center gap-3'>
                   <ShieldCheck className='w-4 h-4 text-emerald-500' />
@@ -112,6 +126,10 @@ export const UserMenu: React.FC<UserMenuProps> = ({
               </button>
 
               <button
+                onClick={() => {
+                  setIsOpen(false);
+                  onOpenSettings();
+                }}
                 className='w-full flex items-center justify-between px-4 py-3 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors group'>
                 <div className='flex items-center gap-3'>
                   <Settings className='w-4 h-4 text-gray-400 group-hover:text-amber-500 transition-colors' />
