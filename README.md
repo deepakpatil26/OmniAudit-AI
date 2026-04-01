@@ -98,3 +98,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 Built with ❤️ by the OmniAudit Team.
+
+
+
+IndiPure 100% Natural Wheatgrass Powder. Sustainably sourced from organic farms in North India. Absolutely no chemicals, fillers, or additives. Packed in 100% eco-friendly packaging. The ultimate Ayurvedic superfood for detox.

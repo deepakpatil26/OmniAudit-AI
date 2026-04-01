@@ -1,8 +1,0 @@
-{
-  "name": "OmniAudit AI",
-  "description": "OmniAudit AI v2.0: Autonomous compliance agent with Deep Dossier analysis, Social Video auditing, and AI-powered Visual Fixer for non-compliant imagery.",
-  "requestFramePermissions": [
-    "camera",
-    "microphone"
-  ]
-}

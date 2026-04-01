@@ -1,6 +1,9 @@
-import { GoogleGenAI, Type } from '@google/genai';
+import Groq from 'groq-sdk';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+const groq = new Groq({
+  apiKey: import.meta.env.VITE_GROQ_API_KEY || '',
+  dangerouslyAllowBrowser: true // Required for client-side usage in Vite
+});
 
 export interface AuditFinding {
   claim: string;
@@ -18,6 +21,36 @@ export interface AuditReport {
   riskSummary: string;
   findings: AuditFinding[];
   thoughtSignature: string;
+  fssaiCategory?: string;
+  categoryReasoning?: string;
+  twinMismatches?: Array<{
+    attribute: string;
+    physicalValue: string;
+    digitalValue: string;
+    severity: 'high' | 'medium' | 'low';
+  }>;
+}
+
+/**
+ * Robust JSON Extractor for LLM responses
+ * Finds the first {...} block in the text even if wrapped in markdown.
+ */
+function extractJSON(text: string): any {
+  try {
+    // If it's already clean JSON
+    return JSON.parse(text);
+  } catch (e) {
+    // Try to find the JSON block using a broad regex
+    const match = text.match(/\{[\s\S]*\}/);
+    if (match) {
+      try {
+        return JSON.parse(match[0]);
+      } catch (innerError) {
+        console.error("Failed to parse inner JSON block:", innerError);
+      }
+    }
+    throw new Error("Could not find valid JSON in AI response.");
+  }
 }
 
 export async function performAudit(
@@ -26,104 +59,161 @@ export async function performAudit(
   mediaItems: { data: string; mimeType: string }[] = [],
   dossierTexts: string[] = [],
 ): Promise<AuditReport> {
-  const model = 'gemini-1.5-pro';
+  // Hybrid Intelligence Selection:
+  // - Llama 4 for Multimodal (Images/Video)
+  // - Llama 3.3 for Deep Text Compliance
+  const model = mediaItems.length > 0 
+    ? 'meta-llama/llama-4-scout-17b-16e-instruct' 
+    : 'llama-3.3-70b-versatile';
 
   const systemInstruction = `
-    You are OmniAudit AI v2.0, a Lead AI Compliance Engineer specializing in Long-Context and Multimodal Agents.
-    Your goal is to audit product listings (text, images, videos) for "Greenwashing" and regional legal compliance.
+    You are OmniAudit AI v3.0, a Lead AI Compliance Engineer specializing in Multimodal Audits.
+    Your goal is to audit product listings for "Greenwashing" and regional compliance (${region}).
     
-    CONTEXT CAPABILITIES:
-    - Deep Dossier: You can ingest multiple supplier documents (up to 1M tokens). Cross-reference them to find historical contradictions or certification lapses.
-    - Social Video Auditor: You can analyze video frames and audio transcripts to verify visual claims against legal standards.
-    - Global Market Switcher: You must use Google Search Grounding to fetch the latest 2026 legal statutes for the selected region: ${region}.
+    1.  **Digital Twin Matcher (Weight/Logo/License Mismatches)**
+    2.  **FSSAI Category Consultant (Cross-referencing 2026 FCS Categories)**
+    3.  **Shelf-Life Tracker (Date Extraction & Freshness Guard)**
     
-    YOUR TASK:
-    1. Analyze the product listing text and all provided media (images/videos).
-    2. Cross-reference claims with the "Deep Dossier" of supplier documents.
-    3. Research regional laws (e.g., EU Green Claims Directive, US FTC Green Guides, APAC standards) using Google Search.
-    4. Flag discrepancies. For visual discrepancies (e.g., an illegal "100% Organic" badge on an image), provide a "visualFixPrompt" that describes exactly how to semantically edit the image to make it compliant.
-    5. Calculate a Compliance Score (0-100) and provide a Risk Summary.
-    6. Provide a "Thought Signature" explaining your long-horizon reasoning.
+    CRITICAL:
+    - Current Date for Shelf-Life: ${new Date().toISOString().split('T')[0]}
+    - Identify Manufacturing (MFG), Expiry (EXP/USE BY), or Best Before dates on packaging images.
+    - Status Rules:
+        *   "expired" if Current Date > EXP Date.
+        *   "near-expiry" if Remaining Days < 45.
+        *   "fresh" if Remaining Days >= 45.
     
-    Output MUST be a structured JSON report.
+    EXAMPLE JSON (FOLLOW THIS EXACT SKELETON):
+    {
+      "productName": "Example Wheatgrass",
+      "complianceScore": 30,
+      "riskSummary": "High risk due to unlisted fillers and near-expiry state.",
+      "shelfLife": {
+        "mfgDate": "2024-01-01",
+        "expDate": "2024-05-15",
+        "remainingDays": 20,
+        "status": "near-expiry"
+      },
+      "fssaiCategory": "13.6 (Health Supplements)",
+      "categoryReasoning": "Product contains concentrated plant extracts and vitamins, fitting the 2026 supplement mandate.",
+      "twinMismatches": [
+        {
+          "attribute": "Net Weight",
+          "physicalValue": "500g",
+          "digitalValue": "450g",
+          "severity": "high"
+        }
+      ],
+      "findings": [
+        {
+          "claim": "100% Pure & No Additives",
+          "evidence": "Supplier dossier lists Maltodextrin (20%) as a carrier.",
+          "status": "discrepancy",
+          "reasoning": "Direct contradiction between marketing and supply chain documents.",
+          "legalReference": "FSSAI Food Labeling Standard 2026 / EU Green Claims Directive",
+          "correctiveAction": "Disclose maltodextrin on the back label ingredients list.",
+          "visualFixPrompt": "Remove '100% Pure' badge from the front of the packaging mockup."
+        }
+      ],
+      "thoughtSignature": "Deep Dossier & Digital Twin cross-referencing enabled."
+    }
+
+    DIGITAL TWIN PROTOCOL:
+    If multiple images are provided, perform a side-by-side audit:
+    1. IMAGE A (Tagged in prompt as Physical): The ground truth label.
+    2. IMAGE B (Tagged in prompt as Digital/Listing): The marketplace representation.
+    3. FLAG any discrepancies in Net Weight, Logos (Veg/Non-Veg), FSSAI license numbers, or health claims found in one but not the other.
+
+    FSSAI CATEGORY INDEX (2026):
+    - 01.0: Dairy | 02.0: Fats/Oils | 04.0: Fruit/Veg | 05.0: Confectionery
+    - 06.0: Cereals | 07.0: Bakery | 12.0: Salts/Spices | 13.0: Nutritional Uses
+    - 13.6: Health Supplements (Common for powders/extracts)
+    - 14.0: Beverages (Mixes/Drinks)
   `;
 
-  const prompt = `
-    Audit the following product for the ${region} market:
-    
-    Product Description: ${productDescription}
-    
-    ${dossierTexts.length > 0 ? `Supplier Dossier (Multiple Documents):\n${dossierTexts.join('\n---\n')}` : 'No supplier dossier provided.'}
-    
-    Please perform the audit and return the findings in JSON format.
-  `;
-
-  const contents = [];
-  const parts: any[] = [{ text: prompt }];
-
-  mediaItems.forEach((item) => {
-    parts.push({
-      inlineData: {
-        mimeType: item.mimeType,
-        data: item.data.split(',')[1] || item.data,
-      },
-    });
-  });
-
-  contents.push({ parts });
-
-  const response = await ai.models.generateContent({
-    model,
-    contents,
-    config: {
-      systemInstruction,
-      responseMimeType: 'application/json',
-      tools: [{ googleSearch: {} }],
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          productName: { type: Type.STRING },
-          complianceScore: { type: Type.NUMBER },
-          riskSummary: { type: Type.STRING },
-          findings: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                claim: { type: Type.STRING },
-                evidence: { type: Type.STRING },
-                status: {
-                  type: Type.STRING,
-                  enum: ['verified', 'discrepancy', 'unverified'],
-                },
-                reasoning: { type: Type.STRING },
-                legalReference: { type: Type.STRING },
-                correctiveAction: { type: Type.STRING },
-                visualFixPrompt: { type: Type.STRING },
-              },
-              required: [
-                'claim',
-                'evidence',
-                'status',
-                'reasoning',
-                'legalReference',
-              ],
-            },
-          },
-          thoughtSignature: { type: Type.STRING },
-        },
-        required: [
-          'productName',
-          'complianceScore',
-          'riskSummary',
-          'findings',
-          'thoughtSignature',
-        ],
-      },
+  const messages: any[] = [
+    {
+      role: 'system',
+      content: systemInstruction
     },
+    {
+      role: 'user',
+      content: [
+        {
+          type: 'text',
+          text: `Audit this product for ${region}:\n\nDescription: ${productDescription}\n\nDossier Data: ${dossierTexts.join('\n---\n')}\n\nIMPORTANT: Start your response with '{' and provide a full populate JSON following the schema.`
+        },
+        ...mediaItems.map(item => ({
+          type: 'image_url',
+          image_url: {
+            url: item.data.startsWith('data:') ? item.data : `data:${item.mimeType};base64,${item.data}`
+          }
+        }))
+      ]
+    }
+  ];
+
+  const response = await groq.chat.completions.create({
+    model,
+    messages,
+    response_format: { type: 'json_object' },
+    temperature: 0.1,
   });
 
-  return JSON.parse(response.text || '{}');
+  const content = response.choices[0]?.message?.content || '{}';
+  console.log("STABILIZED RAW RESPONSE:", content);
+
+  try {
+    let parsed = extractJSON(content);
+    
+    // Normalize nested structures
+    if (parsed.auditReport) parsed = parsed.auditReport;
+    if (parsed.report) parsed = parsed.report;
+
+    return {
+      productName: parsed.productName || productDescription.split('\n')[0].substring(0, 50) || 'New Audit',
+      complianceScore: typeof parsed.complianceScore === 'number' ? parsed.complianceScore : 50,
+      riskSummary: parsed.riskSummary || 'Audit summary missing.',
+      findings: Array.isArray(parsed.findings) ? parsed.findings.map((f: any) => ({
+        claim: f.claim || 'General Claim',
+        evidence: f.evidence || 'N/A',
+        status: (['verified', 'discrepancy', 'unverified'].includes(f.status) ? f.status : 'unverified') as 'verified' | 'discrepancy' | 'unverified',
+        reasoning: f.reasoning || 'No reasoning provided.',
+        legalReference: f.legalReference || 'N/A',
+        correctiveAction: f.correctiveAction,
+        visualFixPrompt: f.visualFixPrompt
+      })) : [],
+      thoughtSignature: parsed.thoughtSignature || 'OmniAudit AI v3.0 Stabilization',
+      fssaiCategory: parsed.fssaiCategory,
+      categoryReasoning: parsed.categoryReasoning,
+      twinMismatches: Array.isArray(parsed.twinMismatches) ? parsed.twinMismatches : []
+    };
+  } catch (e) {
+    console.error("Final Parsing Crash:", e, content);
+    throw new Error("The AI report was malformed. Please try again.");
+  }
+}
+
+export async function getConsultationResponse(
+  query: string,
+): Promise<string> {
+  const model = 'llama-3.3-70b-versatile';
+  const response = await groq.chat.completions.create({
+    model,
+    messages: [
+      {
+        role: 'system',
+        content: 'You are a concise voice-driven compliance consultant for OmniAudit AI. Provide sharp, 1-2 sentence expert answers. NO preamble, just the answer.'
+      },
+      {
+        role: 'user',
+        content: query
+      }
+    ],
+    max_tokens: 100,
+    temperature: 0.5,
+  });
+
+  return response.choices[0]?.message?.content || "I couldn't process that query.";
 }
 
 export async function quickCheck(
@@ -131,54 +221,32 @@ export async function quickCheck(
 ): Promise<{ risk: 'high' | 'low'; message: string } | null> {
   if (text.length < 10) return null;
 
-  const model = 'gemini-1.5-flash';
-  const response = await ai.models.generateContent({
+  const model = 'llama-3.3-70b-versatile';
+  const response = await groq.chat.completions.create({
     model,
-    contents: `Analyze this product title/description for immediate greenwashing red flags (e.g., "100% eco", "totally natural" without proof). Return JSON: { "risk": "high" | "low", "message": "short warning or ok" }. Text: ${text}`,
-    config: {
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          risk: { type: Type.STRING, enum: ['high', 'low'] },
-          message: { type: Type.STRING },
-        },
-        required: ['risk', 'message'],
+    messages: [
+      {
+        role: 'system',
+        content: 'Analyze product text for greenwashing red flags. Return JSON: { "risk": "high" | "low", "message": "short warning" }.'
       },
-    },
+      {
+        role: 'user',
+        content: text
+      }
+    ],
+    response_format: { type: 'json_object' },
+    temperature: 0.1,
   });
 
-  return JSON.parse(response.text || '{}');
+  const content = response.choices[0]?.message?.content || '{}';
+  return JSON.parse(content);
 }
 
 export async function fixImage(
   imageBase64: string,
   fixPrompt: string,
 ): Promise<string> {
-  const model = 'gemini-1.5-flash';
-
-  const response = await ai.models.generateContent({
-    model,
-    contents: {
-      parts: [
-        {
-          inlineData: {
-            mimeType: 'image/jpeg',
-            data: imageBase64.split(',')[1] || imageBase64,
-          },
-        },
-        {
-          text: `Semantically edit this image according to this instruction: ${fixPrompt}. Maintain subject consistency and professional quality.`,
-        },
-      ],
-    },
-  });
-
-  for (const part of response.candidates?.[0]?.content?.parts || []) {
-    if (part.inlineData) {
-      return `data:image/png;base64,${part.inlineData.data}`;
-    }
-  }
-
-  throw new Error('Failed to generate fixed image');
+  const refinedPrompt = encodeURIComponent(`Professional product photography of a compliant version: ${fixPrompt}. Studio lighting, clean background, high resolution, realistic packaging.`);
+  const imageUrl = `https://image.pollinations.ai/prompt/${refinedPrompt}?width=1024&height=1024&seed=${Math.floor(Math.random() * 1000000)}&nologo=true&enhance=true`;
+  return imageUrl;
 }
