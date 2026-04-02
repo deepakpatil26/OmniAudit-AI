@@ -8,6 +8,7 @@
 
 ## Screenshots
 
+![Homepage](public/HomePage.png)
 ![Dashboard](public/Dashboard.png)
 
 ## 🚀 Key Features
