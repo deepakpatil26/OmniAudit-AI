@@ -11,7 +11,7 @@ export const Auth: React.FC<AuthProps> = ({ onSignIn, onBack }) => {
   return (
     <div className='min-h-screen bg-white dark:bg-[#0B0F19] text-gray-900 dark:text-gray-100 flex flex-col'>
       {/* Top Bar */}
-      <div className='p-6 flex items-center justify-between'>
+      <div className='flex flex-wrap items-center justify-between gap-3 p-4 sm:p-6'>
         <button 
           onClick={onBack}
           className='flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors group'>
@@ -24,7 +24,7 @@ export const Auth: React.FC<AuthProps> = ({ onSignIn, onBack }) => {
       </div>
 
       {/* Main Auth Content */}
-      <div className='flex-1 flex items-center justify-center p-4'>
+      <div className='flex-1 flex items-center justify-center p-4 sm:p-6'>
         <motion.div
            initial={{ opacity: 0, y: 20 }}
            animate={{ opacity: 1, y: 0 }}
@@ -34,7 +34,7 @@ export const Auth: React.FC<AuthProps> = ({ onSignIn, onBack }) => {
               <div className='w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-indigo-200 dark:shadow-indigo-900/20'>
                  <Lock className='text-white w-8 h-8' />
               </div>
-              <h1 className='text-3xl font-black mb-2 tracking-tight'>Access Your Suite.</h1>
+              <h1 className='text-3xl font-black mb-2 tracking-tight sm:text-4xl'>Access Your Suite.</h1>
               <p className='text-gray-500 dark:text-gray-400 font-medium'>Sign in to your centralized compliance dashboard.</p>
            </div>
 
@@ -55,7 +55,7 @@ export const Auth: React.FC<AuthProps> = ({ onSignIn, onBack }) => {
                  </div>
               </div>
 
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                  <div className='p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 text-center'>
                     <Globe className='w-4 h-4 text-indigo-500 mx-auto mb-2' />
                     <div className='text-[10px] font-black uppercase text-gray-900 dark:text-gray-100'>Global Compliance</div>
@@ -68,8 +68,8 @@ export const Auth: React.FC<AuthProps> = ({ onSignIn, onBack }) => {
            </div>
 
            <p className='mt-12 text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-loose'>
-              By continuing, you agree to our OmniAudit <br /> 
-              Expert Terms of Service & Privacy Protocol.
+              By continuing, you agree to our OmniAudit
+              <span className='block sm:inline'> Expert Terms of Service & Privacy Protocol.</span>
            </p>
         </motion.div>
       </div>

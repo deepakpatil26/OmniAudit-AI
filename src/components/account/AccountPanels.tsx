@@ -5,19 +5,19 @@ import {
   Bell,
   BookOpenCheck,
   Building2,
+  CalendarClock,
   CheckCircle2,
+  Filter,
   Globe2,
   Save,
   ShieldCheck,
   Sparkles,
   UserRound,
 } from 'lucide-react';
-
-export interface SuitePreferences {
-  emailAlerts: boolean;
-  weeklyDigest: boolean;
-  autoOpenLatestReport: boolean;
-}
+import type { AuditReport } from '../../types/audit';
+import type { SuitePreferences } from '../../types/app';
+import { formatRegionLabel } from '../../lib/auditConfig';
+import { AI_MODEL_ROUTING, AI_POLICY_SUMMARY } from '../../../shared/aiPolicy';
 
 interface SharedPanelProps {
   title: string;
@@ -35,7 +35,7 @@ function PanelShell({
   children,
 }: SharedPanelProps) {
   return (
-    <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10'>
+    <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10'>
       <div className='flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-10'>
         <div>
           <button
@@ -122,8 +122,8 @@ export function ProfileSuite({
       description='Review your authenticated account details and update how your profile appears across the OmniAudit workspace.'
       onBack={onBack}
     >
-      <div className='grid grid-cols-1 xl:grid-cols-[1.1fr,0.9fr] gap-8'>
-        <section className='bg-theme-primary border border-border-primary rounded-[2.5rem] p-8 shadow-sm'>
+      <div className='grid grid-cols-1 xl:grid-cols-[1.1fr,0.9fr] gap-6 lg:gap-8'>
+        <section className='bg-theme-primary border border-border-primary rounded-[2rem] p-5 sm:p-8 shadow-sm'>
           <div className='flex flex-col sm:flex-row sm:items-center gap-5 mb-8'>
             <div className='w-20 h-20 rounded-[2rem] bg-indigo-600 text-white flex items-center justify-center text-2xl font-bold shadow-xl shadow-indigo-100 dark:shadow-none'>
               {user.photoURL ? (
@@ -191,7 +191,7 @@ export function ProfileSuite({
           </div>
         </section>
 
-        <section className='bg-theme-primary border border-border-primary rounded-[2.5rem] p-8 shadow-sm'>
+        <section className='bg-theme-primary border border-border-primary rounded-[2rem] p-5 sm:p-8 shadow-sm'>
           <div className='text-[10px] font-bold uppercase tracking-[0.25em] text-indigo-500 mb-4'>
             Identity snapshot
           </div>
@@ -239,33 +239,72 @@ interface StatutoryUpdateItem {
   region: string;
   priority: 'Critical' | 'Advisory';
   category: string;
+  dueLabel: string;
 }
 
 interface StatutoryUpdatesProps {
+  audits: AuditReport[];
   regions: string[];
+  preferences: SuitePreferences;
   onBack: () => void;
 }
 
-export function StatutoryUpdates({ regions, onBack }: StatutoryUpdatesProps) {
+export function StatutoryUpdates({
+  audits,
+  regions,
+  preferences,
+  onBack,
+}: StatutoryUpdatesProps) {
   const [filter, setFilter] = useState<'all' | 'critical'>('all');
 
   const updates = useMemo<StatutoryUpdateItem[]>(() => {
-    const normalizedRegions = regions.length > 0 ? regions : ['Global'];
-    return normalizedRegions.map((region, index) => ({
-      id: `${region}-${index}`,
-      title: `${region} labeling review cadence`,
-      summary:
-        'Re-check packaging copy, market claims, and expiry disclosures before the next publishing cycle to avoid stale storefront data.',
-      region,
-      priority: index === 0 ? 'Critical' : 'Advisory',
-      category: index === 0 ? 'Label Integrity' : 'Routine Review',
-    }));
-  }, [regions]);
+    if (audits.length === 0) {
+      return [
+        {
+          id: 'global-baseline',
+          title: 'Create your first audit briefing',
+          summary:
+            'Run an initial audit to unlock market-specific reminders, discrepancy tracking, and storefront review timing.',
+          region: 'Global',
+          priority: 'Advisory',
+          category: 'Onboarding',
+          dueLabel: 'Ready now',
+        },
+      ];
+    }
+
+    return audits.slice(0, 8).map((audit, index) => {
+      const hasDiscrepancy = audit.findings.some(
+        (finding) => finding.status === 'discrepancy',
+      );
+      const hasShelfLifeRisk =
+        audit.shelfLife?.status === 'expired' ||
+        audit.shelfLife?.status === 'near-expiry';
+
+      return {
+        id: audit.id || `${audit.region}-${index}`,
+        title: hasDiscrepancy
+          ? `${audit.productName} needs claim review`
+          : `${audit.productName} routine storefront check`,
+        summary: hasShelfLifeRisk
+          ? `Shelf-life tracking flagged ${audit.shelfLife?.status}. Re-check expiry disclosures and marketplace freshness messaging before the next sales cycle.`
+          : hasDiscrepancy
+            ? audit.riskSummary
+            : 'Schedule a lightweight verification pass to confirm storefront copy, imagery, and classification details still match the physical label.',
+        region: audit.region || 'Global',
+        priority: hasDiscrepancy || hasShelfLifeRisk ? 'Critical' : 'Advisory',
+        category: hasDiscrepancy ? 'Label Integrity' : 'Routine Review',
+        dueLabel: hasDiscrepancy ? 'Review today' : 'This week',
+      };
+    });
+  }, [audits]);
 
   const visibleUpdates =
-    filter === 'all'
-      ? updates
-      : updates.filter((item) => item.priority === 'Critical');
+    preferences.condenseRoutineUpdates && filter === 'all'
+      ? updates.filter((item) => item.priority === 'Critical')
+      : filter === 'all'
+        ? updates
+        : updates.filter((item) => item.priority === 'Critical');
 
   return (
     <PanelShell
@@ -274,8 +313,8 @@ export function StatutoryUpdates({ regions, onBack }: StatutoryUpdatesProps) {
       description='Track regulation-facing reminders generated from the regions currently represented in your audit ledger.'
       onBack={onBack}
     >
-      <div className='grid grid-cols-1 xl:grid-cols-[1.2fr,0.8fr] gap-8'>
-        <section className='bg-theme-primary border border-border-primary rounded-[2.5rem] p-8 shadow-sm'>
+      <div className='grid grid-cols-1 xl:grid-cols-[1.2fr,0.8fr] gap-6 lg:gap-8'>
+        <section className='bg-theme-primary border border-border-primary rounded-[2rem] p-5 sm:p-8 shadow-sm'>
           <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8'>
             <div>
               <div className='text-[10px] font-bold uppercase tracking-[0.25em] text-indigo-500 mb-2'>
@@ -318,19 +357,25 @@ export function StatutoryUpdates({ regions, onBack }: StatutoryUpdatesProps) {
                 <div className='flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3'>
                   <div>
                     <div className='text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2'>
-                      {item.region} • {item.category}
+                      {formatRegionLabel(item.region)} | {item.category}
                     </div>
                     <h3 className='text-lg font-bold text-text-primary'>{item.title}</h3>
                   </div>
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-                      item.priority === 'Critical'
-                        ? 'bg-red-50 dark:bg-red-900/30 text-red-600'
-                        : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
-                    }`}
-                  >
-                    {item.priority}
-                  </span>
+                  <div className='flex flex-wrap items-center gap-2'>
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                        item.priority === 'Critical'
+                          ? 'bg-red-50 dark:bg-red-900/30 text-red-600'
+                          : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
+                      }`}
+                    >
+                      {item.priority}
+                    </span>
+                    <span className='inline-flex items-center gap-2 rounded-full bg-theme-primary px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-text-secondary border border-border-primary'>
+                      <CalendarClock className='w-3 h-3' />
+                      {item.dueLabel}
+                    </span>
+                  </div>
                 </div>
                 <p className='text-sm text-text-secondary font-medium leading-relaxed'>
                   {item.summary}
@@ -340,7 +385,7 @@ export function StatutoryUpdates({ regions, onBack }: StatutoryUpdatesProps) {
           </div>
         </section>
 
-        <section className='bg-theme-primary border border-border-primary rounded-[2.5rem] p-8 shadow-sm'>
+        <section className='bg-theme-primary border border-border-primary rounded-[2rem] p-5 sm:p-8 shadow-sm'>
           <div className='text-[10px] font-bold uppercase tracking-[0.25em] text-indigo-500 mb-4'>
             Coverage summary
           </div>
@@ -353,7 +398,9 @@ export function StatutoryUpdates({ regions, onBack }: StatutoryUpdatesProps) {
                 </span>
               </div>
               <div className='text-sm text-text-primary font-medium'>
-                {regions.length > 0 ? regions.join(', ') : 'Global baseline'}
+                {regions.length > 0
+                  ? regions.map((region) => formatRegionLabel(region)).join(', ')
+                  : 'Global baseline'}
               </div>
             </div>
             <div className='p-5 bg-theme-secondary/50 border border-border-primary rounded-[1.5rem]'>
@@ -364,18 +411,22 @@ export function StatutoryUpdates({ regions, onBack }: StatutoryUpdatesProps) {
                 </span>
               </div>
               <div className='text-sm text-text-primary font-medium'>
-                Notices are now surfaced dynamically from your audit coverage instead of static menu text.
+                Notices now respond to saved audits, mismatch risk, and shelf-life severity instead of static placeholder text.
               </div>
             </div>
             <div className='p-5 bg-theme-secondary/50 border border-border-primary rounded-[1.5rem]'>
               <div className='flex items-center gap-3 mb-2'>
-                <Bell className='w-5 h-5 text-amber-500' />
+                <Filter className='w-5 h-5 text-amber-500' />
                 <span className='text-xs font-bold uppercase tracking-widest text-text-secondary'>
-                  Workflow hint
+                  Delivery mode
                 </span>
               </div>
               <div className='text-sm text-text-primary font-medium'>
-                Open `Suite Settings` to control whether update digests and alert notifications stay enabled.
+                {preferences.highlightCriticalUpdates
+                  ? preferences.condenseRoutineUpdates
+                    ? 'Urgent updates stay highlighted, while routine notices are condensed so this feed stays focused on the highest-risk work.'
+                    : 'Urgent updates stay highlighted across the workspace, and advisory notices remain visible for a full review pass.'
+                  : 'Update highlighting is muted in settings, so notices remain available here without persistent visual emphasis.'}
               </div>
             </div>
           </div>
@@ -400,30 +451,36 @@ export function SuiteSettings({
     <PanelShell
       title='Suite Settings'
       eyebrow='Workspace Preferences'
-      description='Control the behavior of compliance alerts and dashboard convenience options for your signed-in workspace.'
+      description='Control the behavior of real in-app compliance signals, dashboard convenience options, and AI routing for your signed-in workspace.'
       onBack={onBack}
     >
-      <div className='grid grid-cols-1 xl:grid-cols-[1.15fr,0.85fr] gap-8'>
-        <section className='bg-theme-primary border border-border-primary rounded-[2.5rem] p-8 shadow-sm'>
+      <div className='grid grid-cols-1 xl:grid-cols-[1.15fr,0.85fr] gap-6 lg:gap-8'>
+        <section className='bg-theme-primary border border-border-primary rounded-[2rem] p-5 sm:p-8 shadow-sm'>
           <div className='space-y-4'>
             {[
               {
-                key: 'emailAlerts',
+                key: 'highlightCriticalUpdates',
                 icon: Bell,
-                title: 'Email Alerts',
-                body: 'Keep update notifications enabled for future statutory reminders.',
+                title: 'Highlight Critical Updates',
+                body: 'Show stronger in-app emphasis for urgent findings and keep the account bell pulse active.',
               },
               {
-                key: 'weeklyDigest',
+                key: 'condenseRoutineUpdates',
                 icon: Sparkles,
-                title: 'Weekly Digest',
-                body: 'Bundle routine notices into a calmer weekly review workflow.',
+                title: 'Condense Routine Updates',
+                body: 'Prioritize critical notices first and collapse lower-priority reminders into a calmer review flow.',
               },
               {
                 key: 'autoOpenLatestReport',
                 icon: Building2,
                 title: 'Resume Latest Report',
                 body: 'Prefer continuity by reopening your latest report context after sign-in.',
+              },
+              {
+                key: 'allowVisionAudits',
+                icon: Globe2,
+                title: 'Enable Vision Audits',
+                body: 'Allow image-based audits to use the separate vision model when packaging or listing screenshots are attached.',
               },
             ].map((item) => {
               const Icon = item.icon;
@@ -468,7 +525,7 @@ export function SuiteSettings({
           </div>
         </section>
 
-        <section className='bg-theme-primary border border-border-primary rounded-[2.5rem] p-8 shadow-sm'>
+        <section className='bg-theme-primary border border-border-primary rounded-[2rem] p-5 sm:p-8 shadow-sm'>
           <div className='text-[10px] font-bold uppercase tracking-[0.25em] text-indigo-500 mb-4'>
             Current profile
           </div>
@@ -478,9 +535,14 @@ export function SuiteSettings({
                 Active preferences
               </div>
               <div className='space-y-2 text-sm text-text-primary font-medium'>
-                <div>Email alerts: {preferences.emailAlerts ? 'On' : 'Off'}</div>
-                <div>Weekly digest: {preferences.weeklyDigest ? 'On' : 'Off'}</div>
+                <div>
+                  Highlight critical updates: {preferences.highlightCriticalUpdates ? 'On' : 'Off'}
+                </div>
+                <div>
+                  Condense routine updates: {preferences.condenseRoutineUpdates ? 'On' : 'Off'}
+                </div>
                 <div>Resume latest report: {preferences.autoOpenLatestReport ? 'On' : 'Off'}</div>
+                <div>Enable vision audits: {preferences.allowVisionAudits ? 'On' : 'Off'}</div>
               </div>
             </div>
             <div className='p-5 bg-theme-secondary/50 border border-border-primary rounded-[1.5rem]'>
@@ -488,7 +550,21 @@ export function SuiteSettings({
                 Persistence
               </div>
               <div className='text-sm text-text-primary font-medium'>
-                Changes are stored locally in your browser so the account menu now controls real suite behavior.
+                Changes are stored locally in your browser and each toggle now maps to visible workspace behavior instead of placeholder email settings.
+              </div>
+            </div>
+            <div className='p-5 bg-theme-secondary/50 border border-border-primary rounded-[1.5rem]'>
+              <div className='text-xs font-bold uppercase tracking-widest text-text-secondary mb-2'>
+                AI routing policy
+              </div>
+              <div className='space-y-3 text-sm text-text-primary font-medium'>
+                <div>{AI_POLICY_SUMMARY}</div>
+                <div>
+                  Text tasks: {AI_MODEL_ROUTING.text.id} for {AI_MODEL_ROUTING.text.usage}.
+                </div>
+                <div>
+                  Vision audits: {AI_MODEL_ROUTING.vision.id} for {AI_MODEL_ROUTING.vision.usage}.
+                </div>
               </div>
             </div>
           </div>
@@ -497,3 +573,5 @@ export function SuiteSettings({
     </PanelShell>
   );
 }
+
+

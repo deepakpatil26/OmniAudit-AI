@@ -7,22 +7,8 @@ import {
   onAuthStateChanged,
   User,
 } from 'firebase/auth';
-import {
-  getFirestore,
-  collection,
-  doc,
-  setDoc,
-  getDoc,
-  query,
-  where,
-  onSnapshot,
-  orderBy,
-  limit,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  getDocFromServer,
-} from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -48,18 +34,3 @@ export const logout = () => signOut(auth);
 
 export { onAuthStateChanged };
 export type { User };
-
-// Test connection
-async function testConnection() {
-  try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message.includes('the client is offline')
-    ) {
-      console.error('Please check your Firebase configuration. ');
-    }
-  }
-}
-testConnection();

@@ -137,7 +137,7 @@ export const LiveConsultOverlay: React.FC<LiveConsultOverlayProps> = ({
                 <MicOff className='w-5 h-5' /> Stop Consultation
               </button>
               <p className='text-[10px] text-indigo-400 text-center uppercase tracking-widest font-bold'>
-                Powered by Groq Llama 3.3
+                Secure server-side Groq Llama 3.3
               </p>
             </div>
           </motion.div>

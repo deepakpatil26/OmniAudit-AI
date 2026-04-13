@@ -11,6 +11,7 @@ interface UserMenuProps {
   onOpenProfile: () => void;
   onOpenUpdates: () => void;
   onOpenSettings: () => void;
+  showUpdatePulse?: boolean;
 }
 
 export const UserMenu: React.FC<UserMenuProps> = ({
@@ -21,6 +22,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
   onOpenProfile,
   onOpenUpdates,
   onOpenSettings,
+  showUpdatePulse = true,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -40,8 +42,8 @@ export const UserMenu: React.FC<UserMenuProps> = ({
     <div className='relative' ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className='flex items-center gap-2 p-1 pl-3 pr-2 bg-gray-100 dark:bg-gray-800 rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-all border border-transparent hover:border-gray-200 dark:hover:border-gray-600 group'>
-        <div className='flex flex-col items-end mr-1 text-right'>
+        className='flex items-center gap-2 p-1 pl-2 sm:pl-3 pr-2 bg-gray-100 dark:bg-gray-800 rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-all border border-transparent hover:border-gray-200 dark:hover:border-gray-600 group'>
+        <div className='hidden sm:flex flex-col items-end mr-1 text-right'>
           <span className='text-[10px] font-bold text-text-primary uppercase tracking-tighter leading-none'>
             {user.displayName?.split(' ')[0] || 'Expert'}
           </span>
@@ -67,7 +69,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className='absolute top-full right-0 mt-3 w-64 bg-theme-primary border border-border-primary rounded-[2.5rem] shadow-2xl shadow-indigo-950/10 z-50 overflow-hidden'>
+            className='absolute top-full right-0 mt-3 w-[min(16rem,calc(100vw-1rem))] bg-theme-primary border border-border-primary rounded-[2.5rem] shadow-2xl shadow-indigo-950/10 z-50 overflow-hidden'>
 
             {/* Header info */}
             <div className='p-5 border-b border-border-primary bg-theme-secondary/50'>
@@ -122,7 +124,11 @@ export const UserMenu: React.FC<UserMenuProps> = ({
                   <ShieldCheck className='w-4 h-4 text-emerald-500' />
                   Statutory Updates
                 </div>
-                <Bell className='w-3 h-3 text-amber-500 animate-pulse' />
+                {showUpdatePulse ? (
+                  <Bell className='w-3 h-3 text-amber-500 animate-pulse' />
+                ) : (
+                  <Bell className='w-3 h-3 text-gray-400' />
+                )}
               </button>
 
               <button

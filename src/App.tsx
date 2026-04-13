@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, {
+  Suspense,
+  lazy,
+  useDeferredValue,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   auth,
   signIn,
@@ -7,100 +14,197 @@ import {
   User,
   db,
 } from './lib/firebase';
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-  doc,
-  updateDoc,
-  deleteDoc,
-} from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
-import { Loader2, TrendingDown, Clock, ShieldCheck, Globe } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-// Types
 import { AuditReport } from './types/audit';
-
-// Hooks
+import { AppView, AuditSort, SuitePreferences } from './types/app';
+import { ActionTask } from './lib/actionCenter';
+import {
+  addDaysToIso,
+  DEFAULT_REVIEW_CADENCE_DAYS,
+  ProductInsightDetail,
+} from './lib/productIntelligence';
+import { useDashboardData } from './hooks/useDashboardData';
 import { useVoiceConsult } from './hooks/useVoiceConsult';
 import { useAuditForm } from './hooks/useAuditForm';
-
-// Components
 import { Header } from './components/layout/Header';
-import {
-  ProfileSuite,
-  StatutoryUpdates,
-  SuitePreferences,
-  SuiteSettings,
-} from './components/account/AccountPanels';
-import { Landing } from './components/layout/Landing';
-import { Auth } from './components/layout/Auth';
-import { AuditCard } from './components/audit/AuditCard';
-import { UploadModal } from './components/audit/UploadModal';
-import { ReportModal } from './components/audit/ReportModal';
-import { LiveConsultOverlay } from './components/audit/LiveConsultOverlay';
-
-// Services
+import { CopilotDock } from './components/ai/CopilotDock';
+import { DashboardStats } from './components/dashboard/DashboardStats';
+import { ActionCenterSection } from './components/dashboard/ActionCenterSection';
+import { ProductMemorySection } from './components/dashboard/ProductMemorySection';
+import { ProductDetailDrawer } from './components/dashboard/ProductDetailDrawer';
+import { AuditLedgerSection } from './components/dashboard/AuditLedgerSection';
 import { fixImage } from './services/gemini';
-import { generateAuditPDF } from './services/pdfGenerator';
+import { ConfirmDialog } from './components/ui/ConfirmDialog';
+import { Toast } from './components/ui/Toast';
+
+const Landing = lazy(() =>
+  import('./components/layout/Landing').then((module) => ({
+    default: module.Landing,
+  })),
+);
+const Auth = lazy(() =>
+  import('./components/layout/Auth').then((module) => ({
+    default: module.Auth,
+  })),
+);
+const ProfileSuite = lazy(() =>
+  import('./components/account/AccountPanels').then((module) => ({
+    default: module.ProfileSuite,
+  })),
+);
+const StatutoryUpdates = lazy(() =>
+  import('./components/account/AccountPanels').then((module) => ({
+    default: module.StatutoryUpdates,
+  })),
+);
+const SuiteSettings = lazy(() =>
+  import('./components/account/AccountPanels').then((module) => ({
+    default: module.SuiteSettings,
+  })),
+);
+const UploadModal = lazy(() =>
+  import('./components/audit/UploadModal').then((module) => ({
+    default: module.UploadModal,
+  })),
+);
+const ReportModal = lazy(() =>
+  import('./components/audit/ReportModal').then((module) => ({
+    default: module.ReportModal,
+  })),
+);
+const LiveConsultOverlay = lazy(() =>
+  import('./components/audit/LiveConsultOverlay').then((module) => ({
+    default: module.LiveConsultOverlay,
+  })),
+);
+
+function LoadingFallback() {
+  return (
+    <div className='min-h-[30vh] flex items-center justify-center'>
+      <Loader2 className='w-7 h-7 animate-spin text-indigo-600' />
+    </div>
+  );
+}
 
 export default function App() {
-  type AppView =
-    | 'landing'
-    | 'auth'
-    | 'dashboard'
-    | 'profile'
-    | 'updates'
-    | 'settings';
-
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [audits, setAudits] = useState<AuditReport[]>([]);
   const [selectedAudit, setSelectedAudit] = useState<AuditReport | null>(null);
+  const [selectedProduct, setSelectedProduct] =
+    useState<ProductInsightDetail | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showLiveConsult, setShowLiveConsult] = useState(false);
   const [isFixing, setIsFixing] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'high-risk'>('all');
   const [view, setView] = useState<AppView>('landing');
-  const [profileRefreshTick, setProfileRefreshTick] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<AuditSort>('newest');
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark';
   });
+  const [toast, setToast] = useState<{
+    message: string;
+    tone: 'success' | 'error';
+  } | null>(null);
+  const [auditPendingDelete, setAuditPendingDelete] =
+    useState<AuditReport | null>(null);
+  const [resolvedActionIds, setResolvedActionIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('resolvedActionIds');
+    if (!saved) return [];
+    try {
+      return JSON.parse(saved) as string[];
+    } catch {
+      return [];
+    }
+  });
+  const autoOpenedLatestRef = useRef<string | null>(null);
+
   const [suitePreferences, setSuitePreferences] = useState<SuitePreferences>(
     () => {
       const saved = localStorage.getItem('suitePreferences');
       if (!saved) {
         return {
-          emailAlerts: true,
-          weeklyDigest: true,
+          highlightCriticalUpdates: true,
+          condenseRoutineUpdates: false,
           autoOpenLatestReport: false,
+          allowVisionAudits: true,
         };
       }
 
       try {
-        return JSON.parse(saved) as SuitePreferences;
+        const parsed = JSON.parse(saved) as
+          | SuitePreferences
+          | {
+              emailAlerts?: boolean;
+              weeklyDigest?: boolean;
+              autoOpenLatestReport?: boolean;
+              allowVisionAudits?: boolean;
+            };
+
+        return {
+          highlightCriticalUpdates:
+            'highlightCriticalUpdates' in parsed
+              ? !!parsed.highlightCriticalUpdates
+              : (parsed.emailAlerts ?? true),
+          condenseRoutineUpdates:
+            'condenseRoutineUpdates' in parsed
+              ? !!parsed.condenseRoutineUpdates
+              : (parsed.weeklyDigest ?? false),
+          autoOpenLatestReport: !!parsed.autoOpenLatestReport,
+          allowVisionAudits:
+            'allowVisionAudits' in parsed ? !!parsed.allowVisionAudits : true,
+        };
       } catch {
         return {
-          emailAlerts: true,
-          weeklyDigest: true,
+          highlightCriticalUpdates: true,
+          condenseRoutineUpdates: false,
           autoOpenLatestReport: false,
+          allowVisionAudits: true,
         };
       }
     },
   );
 
-  // Logic Hooks
   const { transcript, aiResponse, isConsultantThinking } =
     useVoiceConsult(showLiveConsult);
-  const form = useAuditForm(user, () => {
-    setShowUploadModal(false);
-    setView('dashboard');
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const {
+    audits,
+    productProfiles,
+    filteredAudits,
+    stats,
+    coveredRegions,
+    actionTasks,
+    actionStats,
+    groupedActionTasks,
+    productInsights,
+  } = useDashboardData({
+    user,
+    view,
+    deferredSearchQuery,
+    filter,
+    sortBy,
+    resolvedActionIds,
   });
 
-  // Theme Logic
+  const form = useAuditForm(user, suitePreferences.allowVisionAudits, () => {
+    setShowUploadModal(false);
+    setView('dashboard');
+    setToast({
+      message: 'Audit completed and saved to your ledger.',
+      tone: 'success',
+    });
+  });
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
+
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -115,97 +219,257 @@ export default function App() {
     localStorage.setItem('suitePreferences', JSON.stringify(suitePreferences));
   }, [suitePreferences]);
 
-  // Auth Listener
+  useEffect(() => {
+    localStorage.setItem(
+      'resolvedActionIds',
+      JSON.stringify(resolvedActionIds),
+    );
+  }, [resolvedActionIds]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (currentUser && view === 'auth') {
         setView('dashboard');
       }
+      if (!currentUser) {
+        autoOpenedLatestRef.current = null;
+      }
       setLoading(false);
     });
     return () => unsubscribe();
   }, [view]);
 
-  // Audits Listener
   useEffect(() => {
-    if (user) {
-      const q = query(
-        collection(db, 'audits'),
-        where('userId', '==', user.uid),
-        orderBy('createdAt', 'desc'),
-      );
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const auditData = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as AuditReport[];
-        setAudits(auditData);
-      });
-      return () => unsubscribe();
-    } else {
-      setAudits([]);
-      if (view !== 'landing' && view !== 'auth') setView('landing');
+    if (!user && view !== 'landing' && view !== 'auth') {
+      setView('landing');
+      setSelectedProduct(null);
     }
   }, [user, view]);
 
-  // Filtering Logic
-  const filteredAudits = useMemo(() => {
-    if (filter === 'all') return audits;
-    return audits.filter((audit) =>
-      audit.findings.some((f) => f.status === 'discrepancy'),
-    );
-  }, [audits, filter]);
+  useEffect(() => {
+    if (
+      !suitePreferences.autoOpenLatestReport ||
+      view !== 'dashboard' ||
+      selectedAudit ||
+      audits.length === 0
+    ) {
+      return;
+    }
 
-  // Insight Stats
-  const stats = useMemo(() => {
-    const highRiskCount = audits.filter((a) =>
-      a.findings.some((f) => f.status === 'discrepancy'),
-    ).length;
-    const avgScore =
-      audits.length > 0
-        ? Math.round(
-            audits.reduce((acc, curr) => acc + (curr.complianceScore || 0), 0) /
-              audits.length,
-          )
-        : 100;
-    const regions = new Set(audits.map((a) => a.region)).size;
-    return { highRiskCount, avgScore, regions };
-  }, [audits]);
+    const latestAudit = audits[0];
+    if (!latestAudit?.id || autoOpenedLatestRef.current === latestAudit.id) {
+      return;
+    }
 
-  const coveredRegions = useMemo(() => {
-    return Array.from(
-      new Set(audits.map((audit) => audit.region).filter(Boolean)),
+    setSelectedAudit(latestAudit);
+    autoOpenedLatestRef.current = latestAudit.id;
+  }, [audits, selectedAudit, suitePreferences.autoOpenLatestReport, view]);
+
+  useEffect(() => {
+    if (!selectedProduct) return;
+    const refreshed = productInsights.find(
+      (insight) => insight.profile.productKey === selectedProduct.profile.productKey,
     );
-  }, [audits]);
+    if (refreshed) {
+      setSelectedProduct(refreshed);
+    }
+  }, [productInsights, selectedProduct]);
+
+  const copilotContextTitle = selectedAudit
+    ? `${selectedAudit.productName} report`
+    : selectedProduct
+      ? `${selectedProduct.profile.productName} workspace`
+      : view === 'dashboard'
+        ? 'Audit ledger'
+        : view === 'updates'
+          ? 'Statutory updates'
+          : view === 'settings'
+            ? 'Suite settings'
+            : 'OmniAudit workspace';
+
+  const copilotContextPrompt = selectedAudit
+    ? `You are helping with a compliance report for ${selectedAudit.productName} in ${selectedAudit.region}. Risk summary: ${selectedAudit.riskSummary}`
+    : selectedProduct
+      ? `You are helping with product memory for ${selectedProduct.profile.productName}. Latest summary: ${selectedProduct.profile.latestRiskSummary}. Reminder state: ${selectedProduct.reminderLabel}.`
+      : view === 'dashboard'
+        ? 'You are helping a user understand their OmniAudit compliance ledger, audit history, and risk signals.'
+        : view === 'updates'
+          ? 'You are helping a user understand update prioritization, routine reminders, and critical notices in OmniAudit.'
+          : view === 'settings'
+            ? 'You are helping a user understand real workspace settings and how they change behavior inside OmniAudit.'
+            : 'You are helping a user understand how to use OmniAudit effectively.';
+
+  const copilotPrompts = selectedAudit
+    ? [
+        'Why did this audit get this score?',
+        'What should I fix first in this report?',
+        'How should I explain these risks to my team?',
+      ]
+    : selectedProduct
+      ? [
+          'What changed for this product since the last audit?',
+          'What should I review before the next audit?',
+          'Why is this product on watchlist?',
+        ]
+      : view === 'dashboard'
+        ? [
+            'How should I prioritize the audits in this ledger?',
+            'What usually leads to high-risk findings?',
+            'What makes a strong audit package?',
+          ]
+        : [
+            'How do I get the best result from OmniAudit?',
+            'What should I upload before running an audit?',
+            'What can the AI copilot help me with?',
+          ];
+
+  const showUpdatePulse = suitePreferences.highlightCriticalUpdates;
+
+  const handleStartReaudit = (task: ActionTask) => {
+    form.clearSubmitError();
+    form.setRegion(task.audit.region as any);
+    form.setProductDesc(task.audit.productDescription);
+    setSelectedProduct(null);
+    setShowUploadModal(true);
+    setToast({
+      message: `Re-audit draft prepared for ${task.audit.productName}.`,
+      tone: 'success',
+    });
+  };
+
+  const handleStartProductReaudit = (productInsight: ProductInsightDetail) => {
+    form.clearSubmitError();
+    form.setRegion(productInsight.profile.region as any);
+    form.setProductDesc(
+      productInsight.latestAudit?.productDescription ||
+        productInsight.profile.latestRiskSummary,
+    );
+    setSelectedProduct(null);
+    setShowUploadModal(true);
+    setToast({
+      message: `Re-audit draft prepared for ${productInsight.profile.productName}.`,
+      tone: 'success',
+    });
+  };
+
+  const handleResolveAction = (actionId: string) => {
+    setResolvedActionIds((current) =>
+      current.includes(actionId) ? current : [...current, actionId],
+    );
+  };
 
   const handleStartAuditClick = () => {
     if (!user) {
       setView('auth');
     } else {
+      form.clearSubmitError();
       setShowUploadModal(true);
     }
   };
 
-  const handleDeleteAudit = async (id: string) => {
-    if (!window.confirm('Terminate this statutory record permanently?')) return;
+  const handleOpenAuditFromDrawer = (auditId: string) => {
+    const targetAudit = audits.find((audit) => audit.id === auditId);
+    if (targetAudit) {
+      setSelectedAudit(targetAudit);
+    }
+  };
+
+  const handleUpdateProductCadence = async (
+    insight: ProductInsightDetail,
+    cadenceDays: number,
+  ) => {
     try {
-      await deleteDoc(doc(db, 'audits', id));
+      const baseDate =
+        insight.profile.lastReviewedAt ||
+        insight.profile.lastAuditAt ||
+        new Date().toISOString();
+      await updateDoc(doc(db, 'productProfiles', insight.profile.productKey), {
+        reviewCadenceDays: cadenceDays,
+        nextReviewAt: addDaysToIso(baseDate, cadenceDays),
+        timestamp: serverTimestamp(),
+      });
+      setToast({
+        message: `Review cadence updated to ${cadenceDays} days.`,
+        tone: 'success',
+      });
+    } catch (error) {
+      console.error('Cadence update failed:', error);
+      setToast({
+        message: 'Unable to update the review cadence right now.',
+        tone: 'error',
+      });
+    }
+  };
+
+  const handleMarkProductReviewed = async (insight: ProductInsightDetail) => {
+    try {
+      const reviewedAt = new Date().toISOString();
+      const cadenceDays =
+        insight.profile.reviewCadenceDays || DEFAULT_REVIEW_CADENCE_DAYS;
+      await updateDoc(doc(db, 'productProfiles', insight.profile.productKey), {
+        lastReviewedAt: reviewedAt,
+        nextReviewAt: addDaysToIso(reviewedAt, cadenceDays),
+        timestamp: serverTimestamp(),
+      });
+      setToast({
+        message: `${insight.profile.productName} marked reviewed.`,
+        tone: 'success',
+      });
+    } catch (error) {
+      console.error('Mark reviewed failed:', error);
+      setToast({
+        message: 'Unable to mark this product reviewed right now.',
+        tone: 'error',
+      });
+    }
+  };
+
+  const handleConfirmDeleteAudit = async () => {
+    if (!auditPendingDelete?.id) return;
+    try {
+      await deleteDoc(doc(db, 'audits', auditPendingDelete.id));
+      setToast({
+        message: 'Audit removed from your ledger.',
+        tone: 'success',
+      });
     } catch (error) {
       console.error('Delete failed:', error);
+      setToast({
+        message: 'Unable to remove this audit right now.',
+        tone: 'error',
+      });
+    } finally {
+      setAuditPendingDelete(null);
     }
   };
 
   const handleSaveDisplayName = async (displayName: string) => {
     if (!auth.currentUser) return;
-    await updateProfile(auth.currentUser, { displayName });
-    setProfileRefreshTick((value) => value + 1);
+    try {
+      await updateProfile(auth.currentUser, { displayName });
+      setUser((currentUser) =>
+        currentUser ? ({ ...currentUser, displayName } as User) : currentUser,
+      );
+      setToast({
+        message: 'Profile display name updated.',
+        tone: 'success',
+      });
+    } catch (error) {
+      console.error('Profile update failed:', error);
+      setToast({
+        message: 'Unable to update your profile right now.',
+        tone: 'error',
+      });
+      throw error;
+    }
   };
 
   const handleFixImage = async (findingIdx: number) => {
     if (!selectedAudit || !selectedAudit.productImage) return;
     const finding = selectedAudit.findings[findingIdx];
     if (!finding.visualFixPrompt) return;
+
     setIsFixing(findingIdx.toString());
     try {
       const fixedImage = await fixImage(
@@ -213,11 +477,12 @@ export default function App() {
         finding.visualFixPrompt,
       );
       const updatedFindings = [...selectedAudit.findings];
+      const { visualFixPrompt: _visualFixPrompt, ...findingWithoutPrompt } =
+        finding;
       updatedFindings[findingIdx] = {
-        ...finding,
+        ...findingWithoutPrompt,
         status: 'verified',
         reasoning: `Visual correction applied: ${finding.reasoning}`,
-        visualFixPrompt: undefined,
       };
       const updatedAudit = {
         ...selectedAudit,
@@ -234,8 +499,31 @@ export default function App() {
           complianceScore: updatedAudit.complianceScore,
         });
       }
+      setToast({
+        message: 'Visual fix applied to the report preview.',
+        tone: 'success',
+      });
+    } catch (error) {
+      console.error('Visual fix failed:', error);
+      setToast({
+        message: 'Unable to apply the visual fix right now.',
+        tone: 'error',
+      });
     } finally {
       setIsFixing(null);
+    }
+  };
+
+  const handleGeneratePDF = async (audit: AuditReport) => {
+    try {
+      const { generateAuditPDF } = await import('./services/pdfGenerator');
+      await generateAuditPDF(audit);
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      setToast({
+        message: 'Unable to generate the certificate right now.',
+        tone: 'error',
+      });
     }
   };
 
@@ -264,6 +552,7 @@ export default function App() {
           user={user}
           isDarkMode={isDarkMode}
           onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+          showUpdatePulse={showUpdatePulse}
         />
       )}
 
@@ -274,10 +563,12 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}>
-            <Landing
-              onStartAudit={handleStartAuditClick}
-              isLoggedIn={!!user}
-            />
+            <Suspense fallback={<LoadingFallback />}>
+              <Landing
+                onStartAudit={handleStartAuditClick}
+                isLoggedIn={!!user}
+              />
+            </Suspense>
           </motion.div>
         )}
 
@@ -287,10 +578,9 @@ export default function App() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}>
-            <Auth
-              onSignIn={signIn}
-              onBack={() => setView('landing')}
-            />
+            <Suspense fallback={<LoadingFallback />}>
+              <Auth onSignIn={signIn} onBack={() => setView('landing')} />
+            </Suspense>
           </motion.div>
         )}
 
@@ -301,118 +591,36 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10'>
-            {/* Expert Insight Cards */}
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-12'>
-              <div className='bg-theme-primary p-6 rounded-[2rem] border border-border-primary shadow-sm'>
-                <div className='flex items-center gap-4'>
-                  <div className='w-12 h-12 bg-red-50 dark:bg-red-900/20 rounded-2xl flex items-center justify-center text-red-600 dark:text-red-400'>
-                    <TrendingDown className='w-6 h-6' />
-                  </div>
-                  <div>
-                    <div className='text-xs font-bold text-text-secondary uppercase tracking-widest'>
-                      Risk detections
-                    </div>
-                    <div className='text-3xl font-bold text-text-primary leading-none mt-1'>
-                      {stats.highRiskCount}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className='bg-theme-primary p-6 rounded-[2rem] border border-border-primary shadow-sm'>
-                <div className='flex items-center gap-4'>
-                  <div className='w-12 h-12 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400'>
-                    <ShieldCheck className='w-6 h-6' />
-                  </div>
-                  <div>
-                    <div className='text-xs font-bold text-text-secondary uppercase tracking-widest'>
-                      Integrity Score
-                    </div>
-                    <div className='text-3xl font-bold text-text-primary leading-none mt-1'>
-                      {stats.avgScore}%
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className='bg-theme-primary p-6 rounded-[2rem] border border-border-primary shadow-sm'>
-                <div className='flex items-center gap-4'>
-                  <div className='w-12 h-12 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400'>
-                    <Globe className='w-6 h-6' />
-                  </div>
-                  <div>
-                    <div className='text-xs font-bold text-text-secondary uppercase tracking-widest'>
-                      Market Coverage
-                    </div>
-                    <div className='text-3xl font-bold text-text-primary leading-none mt-1'>
-                      {stats.regions} Regions
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <DashboardStats stats={stats} />
 
-            <div className='flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4'>
-              <div>
-                <h2 className='text-2xl font-bold text-text-primary tracking-tight leading-none'>
-                  Expert Ledger
-                </h2>
-                <p className='text-sm text-text-secondary font-medium italic mt-2'>
-                  Manage your statutory compliance reports.
-                </p>
-              </div>
-              <div className='flex items-center gap-2 bg-theme-primary p-1 rounded-xl border border-border-primary shadow-sm'>
-                <button
-                  onClick={() => setFilter('all')}
-                  className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${
-                    filter === 'all'
-                      ? 'bg-theme-secondary text-text-primary'
-                      : 'text-text-secondary hover:text-text-primary'
-                  }`}>
-                  All Records
-                </button>
-                <button
-                  onClick={() => setFilter('high-risk')}
-                  className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${
-                    filter === 'high-risk'
-                      ? 'bg-red-50 dark:bg-red-900/40 text-red-600'
-                      : 'text-text-secondary hover:text-text-primary'
-                  }`}>
-                  High Risk
-                </button>
-              </div>
-            </div>
+            <ActionCenterSection
+              actionTasks={actionTasks}
+              actionStats={actionStats}
+              groupedActionTasks={groupedActionTasks}
+              onOpenReport={setSelectedAudit}
+              onStartReaudit={handleStartReaudit}
+              onResolveTask={handleResolveAction}
+            />
 
-            {filteredAudits.length === 0 ? (
-              <div className='bg-white dark:bg-gray-800/30 border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-[2.5rem] p-16 text-center'>
-                <div className='w-16 h-16 bg-indigo-50 dark:bg-indigo-900/20 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6'>
-                  <Clock className='text-indigo-400 dark:text-indigo-600 w-8 h-8' />
-                </div>
-                <h3 className='text-xl font-bold text-gray-900 dark:text-white mb-2 uppercase tracking-tight'>
-                  {filter === 'all'
-                    ? 'Statutory Ledger Empty'
-                    : 'No Critical Deviations Found'}
-                </h3>
-                <p className='text-gray-500 dark:text-gray-400 mb-10 max-w-sm mx-auto font-medium'>
-                  Your compliance history is clear. Ready to initiate a new
-                  statutory verification?
-                </p>
-                <button
-                  onClick={handleStartAuditClick}
-                  className='inline-flex items-center gap-3 bg-indigo-600 text-white px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-indigo-100 dark:shadow-none'>
-                  Initiate Audit
-                </button>
-              </div>
-            ) : (
-              <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
-                {filteredAudits.map((audit) => (
-                  <AuditCard
-                    key={audit.id}
-                    audit={audit}
-                    onViewReport={setSelectedAudit}
-                    onDelete={handleDeleteAudit}
-                  />
-                ))}
-              </div>
-            )}
+            <ProductMemorySection
+              productCount={productProfiles.length}
+              productInsights={productInsights}
+              onOpenProduct={setSelectedProduct}
+              onStartReaudit={handleStartProductReaudit}
+            />
+
+            <AuditLedgerSection
+              filter={filter}
+              searchQuery={searchQuery}
+              sortBy={sortBy}
+              filteredAudits={filteredAudits}
+              onSetFilter={setFilter}
+              onSetSearchQuery={setSearchQuery}
+              onSetSortBy={setSortBy}
+              onStartAudit={handleStartAuditClick}
+              onViewReport={setSelectedAudit}
+              onDeleteAudit={setAuditPendingDelete}
+            />
           </motion.main>
         )}
 
@@ -422,13 +630,15 @@ export default function App() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}>
-            <ProfileSuite
-              user={user}
-              auditCount={audits.length}
-              regionCount={coveredRegions.length}
-              onBack={() => setView('dashboard')}
-              onSaveDisplayName={handleSaveDisplayName}
-            />
+            <Suspense fallback={<LoadingFallback />}>
+              <ProfileSuite
+                user={user}
+                auditCount={audits.length}
+                regionCount={coveredRegions.length}
+                onBack={() => setView('dashboard')}
+                onSaveDisplayName={handleSaveDisplayName}
+              />
+            </Suspense>
           </motion.div>
         )}
 
@@ -438,10 +648,14 @@ export default function App() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}>
-            <StatutoryUpdates
-              regions={coveredRegions}
-              onBack={() => setView('dashboard')}
-            />
+            <Suspense fallback={<LoadingFallback />}>
+              <StatutoryUpdates
+                audits={audits}
+                regions={coveredRegions}
+                preferences={suitePreferences}
+                onBack={() => setView('dashboard')}
+              />
+            </Suspense>
           </motion.div>
         )}
 
@@ -451,34 +665,74 @@ export default function App() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}>
-            <SuiteSettings
-              preferences={suitePreferences}
-              onBack={() => setView('dashboard')}
-              onUpdatePreferences={setSuitePreferences}
-            />
+            <Suspense fallback={<LoadingFallback />}>
+              <SuiteSettings
+                preferences={suitePreferences}
+                onBack={() => setView('dashboard')}
+                onUpdatePreferences={setSuitePreferences}
+              />
+            </Suspense>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <UploadModal
-        show={showUploadModal}
-        onClose={() => setShowUploadModal(false)}
-        {...form}
+      <ProductDetailDrawer
+        insight={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        onOpenAudit={handleOpenAuditFromDrawer}
+        onStartReaudit={handleStartProductReaudit}
+        onUpdateCadence={handleUpdateProductCadence}
+        onMarkReviewed={handleMarkProductReviewed}
       />
-      <ReportModal
-        audit={selectedAudit}
-        onClose={() => setSelectedAudit(null)}
-        onGeneratePDF={generateAuditPDF}
-        onFixImage={handleFixImage}
-        isFixing={isFixing}
+
+      <Suspense fallback={null}>
+        <UploadModal
+          show={showUploadModal}
+          onClose={() => setShowUploadModal(false)}
+          {...form}
+        />
+      </Suspense>
+      <Suspense fallback={null}>
+        <ReportModal
+          audit={selectedAudit}
+          onClose={() => setSelectedAudit(null)}
+          onGeneratePDF={handleGeneratePDF}
+          onFixImage={handleFixImage}
+          isFixing={isFixing}
+          resolvedActionIds={resolvedActionIds}
+          onResolveAction={handleResolveAction}
+        />
+      </Suspense>
+      <Suspense fallback={null}>
+        <LiveConsultOverlay
+          show={showLiveConsult}
+          onClose={() => setShowLiveConsult(false)}
+          transcript={transcript}
+          aiResponse={aiResponse}
+          isConsultantThinking={isConsultantThinking}
+        />
+      </Suspense>
+
+      <ConfirmDialog
+        show={!!auditPendingDelete}
+        title='Remove audit record?'
+        description="This audit will be permanently removed from your ledger. You can't undo this after confirming."
+        confirmLabel='Delete audit'
+        onCancel={() => setAuditPendingDelete(null)}
+        onConfirm={handleConfirmDeleteAudit}
       />
-      <LiveConsultOverlay
-        show={showLiveConsult}
-        onClose={() => setShowLiveConsult(false)}
-        transcript={transcript}
-        aiResponse={aiResponse}
-        isConsultantThinking={isConsultantThinking}
+      <Toast
+        message={toast?.message || null}
+        tone={toast?.tone}
+        onClose={() => setToast(null)}
       />
+      {view !== 'auth' && (
+        <CopilotDock
+          contextTitle={copilotContextTitle}
+          contextPrompt={copilotContextPrompt}
+          suggestedPrompts={copilotPrompts}
+        />
+      )}
     </div>
   );
 }

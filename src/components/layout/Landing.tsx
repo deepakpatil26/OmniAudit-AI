@@ -11,7 +11,7 @@ export const Landing: React.FC<LandingProps> = ({ onStartAudit, isLoggedIn }) =>
   return (
     <div className='min-h-screen bg-theme-primary text-text-primary transition-colors duration-300'>
       {/* Hero Section */}
-      <section className='relative pt-20 pb-32 overflow-hidden'>
+      <section className='relative overflow-hidden pb-24 pt-16 sm:pt-20 sm:pb-32'>
         <div className='absolute inset-0 bg-indigo-50/30 dark:bg-indigo-900/10' />
         <div className='absolute -top-24 -right-24 w-96 h-96 bg-indigo-200/20 dark:bg-indigo-500/10 rounded-full blur-3xl' />
         <div className='absolute bottom-0 -left-24 w-96 h-96 bg-emerald-100/20 dark:bg-emerald-500/10 rounded-full blur-3xl' />
@@ -30,7 +30,7 @@ export const Landing: React.FC<LandingProps> = ({ onStartAudit, isLoggedIn }) =>
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className='text-5xl sm:text-7xl font-bold tracking-tight leading-none mb-8 text-gray-900 dark:text-white'>
+              className='mb-6 text-4xl font-bold tracking-tight leading-[0.95] text-gray-900 dark:text-white sm:mb-8 sm:text-6xl lg:text-7xl'>
               Secure Your <span className='text-indigo-600 dark:text-indigo-400 italic'>Market Integrity</span> in Minutes
             </motion.h1>
 
@@ -38,7 +38,7 @@ export const Landing: React.FC<LandingProps> = ({ onStartAudit, isLoggedIn }) =>
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className='text-lg sm:text-xl text-gray-600 dark:text-gray-400 mb-10 leading-relaxed max-w-2xl mx-auto font-medium'>
+              className='mx-auto mb-8 max-w-2xl text-base leading-relaxed text-gray-600 dark:text-gray-400 font-medium sm:mb-10 sm:text-xl'>
               The world's first AI-powered statutory defender for e-commerce brands. Automatically audit packaging, eliminate greenwashing, and map global standards.
             </motion.p>
 
@@ -46,19 +46,21 @@ export const Landing: React.FC<LandingProps> = ({ onStartAudit, isLoggedIn }) =>
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className='flex flex-col sm:flex-row items-center justify-center gap-4'>
+              className='flex flex-col items-center justify-center gap-4 sm:flex-row'>
               <button
                 onClick={onStartAudit}
                 className='w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-gray-900 dark:bg-indigo-600 text-white rounded-2xl font-bold uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-gray-200 dark:shadow-none group'>
                 {isLoggedIn ? 'Go to Dashboard' : 'Start Free Audit'}
                 <ArrowRight className='w-5 h-5 group-hover:translate-x-1 transition-transform' />
               </button>
-              <div className='flex -space-x-2'>
+              <div className='flex flex-wrap items-center justify-center gap-3 sm:flex-nowrap sm:justify-start'>
+                <div className='flex -space-x-2'>
                 {[1, 2, 3, 4].map((i) => (
                   <div key={i} className='w-10 h-10 rounded-xl border-2 border-white dark:border-gray-800 bg-gray-100 dark:bg-gray-800 flex items-center justify-center shadow-sm'>
                     <Shield className='w-4 h-4 text-indigo-400' />
                   </div>
                 ))}
+                </div>
                 <span className='pl-4 text-[10px] text-gray-400 font-bold uppercase tracking-widest self-center text-left'>
                   Trusted by 500+ D2C Brands
                 </span>
@@ -131,17 +133,17 @@ export const Landing: React.FC<LandingProps> = ({ onStartAudit, isLoggedIn }) =>
       {/* Impact Section */}
       <section className='py-24 overflow-hidden relative'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-          <div className='bg-gray-900 dark:bg-gray-800/50 rounded-[3.5rem] p-12 sm:p-20 relative overflow-hidden text-center sm:text-left border border-white/5 shadow-2xl'>
+          <div className='bg-gray-900 dark:bg-gray-800/50 rounded-[2.5rem] p-6 sm:p-12 lg:p-20 relative overflow-hidden text-center sm:text-left border border-white/5 shadow-2xl'>
             <div className='absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 blur-3xl' />
-            <div className='grid grid-cols-1 lg:grid-cols-2 gap-16 items-center'>
+            <div className='grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16'>
               <div className='z-10'>
-                <h2 className='text-4xl sm:text-5xl font-bold text-white mb-6 tracking-tight leading-tight'>
+                <h2 className='text-3xl sm:text-5xl font-bold text-white mb-6 tracking-tight leading-tight'>
                   The <span className='italic text-indigo-400'>Statutory Seal</span> of Tomorrow.
                 </h2>
                 <p className='text-lg text-indigo-100/60 leading-relaxed mb-10 font-medium'>
                   Generate ISO-compliant Audit Certificates ready for legal submission or marketplace verification. OmniAudit AI is the only tool that bridges the gap between marketing and statutory reality.
                 </p>
-                <div className='grid grid-cols-2 gap-8'>
+                <div className='grid grid-cols-2 gap-6 sm:gap-8'>
                   <div>
                     <div className='text-3xl font-bold text-white mb-1'>99.4%</div>
                     <div className='text-[10px] text-indigo-300 font-bold uppercase tracking-widest'>Detection Accuracy</div>
