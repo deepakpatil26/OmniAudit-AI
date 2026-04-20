@@ -42,9 +42,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleDarkMode,
   showUpdatePulse = true,
 }) => {
-  const activeLogo = isDarkMode
-    ? '/light-logo.png'
-    : '/dark-logo.png';
+  const activeLogo = '/light-logo.png';
 
   return (
     <header className='sticky top-0 z-50 border-b border-border-primary bg-theme-primary/80 backdrop-blur-md transition-colors duration-300'>
@@ -156,4 +154,5 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+
 

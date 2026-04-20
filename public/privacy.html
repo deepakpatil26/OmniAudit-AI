@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0" />
+    <title>OmniAudit AI Privacy Policy</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f8fafc;
+        --panel: rgba(255, 255, 255, 0.82);
+        --text: #0f172a;
+        --muted: #475569;
+        --accent: #4f46e5;
+        --border: rgba(15, 23, 42, 0.08);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #020617;
+          --panel: rgba(15, 23, 42, 0.82);
+          --text: #e2e8f0;
+          --muted: #94a3b8;
+          --border: rgba(148, 163, 184, 0.16);
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+        background:
+          radial-gradient(
+            circle at top right,
+            rgba(79, 70, 229, 0.18),
+            transparent 30%
+          ),
+          var(--bg);
+        color: var(--text);
+      }
+      main {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 48px 20px 80px;
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        backdrop-filter: blur(18px);
+        border-radius: 28px;
+        padding: 32px;
+        box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 3rem);
+        margin: 0 0 16px;
+      }
+      h2 {
+        margin-top: 32px;
+        font-size: 1.05rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      p,
+      li {
+        line-height: 1.7;
+        color: var(--muted);
+      }
+      ul {
+        padding-left: 20px;
+      }
+      a {
+        color: var(--accent);
+      }
+      .eyebrow {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="panel">
+        <div class="eyebrow">OmniAudit AI</div>
+        <h1>Privacy Policy</h1>
+        <p>Last updated: April 2026</p>
+        <p>
+          OmniAudit AI helps users audit product listings, packaging claims, and
+          supporting compliance materials. This page explains what data is
+          processed in the app and how it is used.
+        </p>
+
+        <h2>What We Collect</h2>
+        <ul>
+          <li>Account information provided through Firebase Authentication.</li>
+          <li>
+            Audit inputs such as listing text, uploaded packaging images,
+            marketplace screenshots, and optional supporting documents.
+          </li>
+          <li>
+            Generated audit outputs including findings, scores, rewrites,
+            reminder settings, and product memory records.
+          </li>
+        </ul>
+
+        <h2>How Data Is Used</h2>
+        <ul>
+          <li>
+            To run AI-assisted compliance audits and explain results inside the
+            workspace.
+          </li>
+          <li>
+            To save audit history and product memory in your Firebase-backed
+            account.
+          </li>
+          <li>
+            To improve workflow continuity, such as re-audits, reminder cadence,
+            and action tracking.
+          </li>
+        </ul>
+
+        <h2>AI Processing</h2>
+        <p>
+          Audit prompts and related inputs may be sent to server-side AI
+          providers to generate findings, rewrite suggestions, and compliance
+          guidance. Do not upload sensitive information unless your deployment
+          and provider configuration are approved for that use.
+        </p>
+
+        <h2>Data Control</h2>
+        <p>
+          You control the content you upload. Audit records stored in your
+          configured Firebase project can be updated or deleted by authorized
+          users according to your Firestore rules.
+        </p>
+
+        <h2>Contact</h2>
+        <p>
+          If you need a production-ready legal review, replace this template
+          with your organization�s final approved policy before broader public
+          rollout.
+        </p>
+        <p><a href="/">Return to OmniAudit AI</a></p>
+      </div>
+    </main>
+  </body>
+</html>

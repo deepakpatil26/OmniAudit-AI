@@ -1,6 +1,6 @@
 # OmniAudit AI
 
-OmniAudit AI is a multimodal compliance auditing app for e-commerce product listings. It helps teams review marketing claims, packaging images, marketplace screenshots, and supplier documents for labeling risks, greenwashing signals, and product-listing mismatches.
+OmniAudit AI is a multimodal compliance workspace for e-commerce product listings. It helps teams and solo operators review marketing claims, packaging images, marketplace screenshots, and supplier documents for labeling risks, greenwashing signals, shelf-life issues, and packaging-to-listing mismatches.
 
 [![Live Demo](https://img.shields.io/badge/Live-Demo-indigo?style=for-the-badge)](https://omni-audit-ai.vercel.app/)
 
@@ -9,15 +9,15 @@ OmniAudit AI is a multimodal compliance auditing app for e-commerce product list
 - Runs AI audits against product descriptions and uploaded media.
 - Compares physical packaging with digital marketplace listings.
 - Generates structured reports with findings, legal references, corrective actions, and compliance scores.
-- Tracks audit history per user in Firebase.
-- Offers a quick-check experience while typing and a voice-based compliance consult flow.
+- Tracks audit history, product memory, reminder cadence, and re-audit workflows per user.
+- Offers a quick-check experience while typing, a compliance copilot, and report-specific rewrite guidance.
 
 ## Current Stack
 
 - Frontend: React 19, Vite, Tailwind CSS 4, Framer Motion
-- Backend: Express wrapper for local Vite serving
+- Backend: Express wrapper for local Vite serving and API routes
 - Auth and data: Firebase Auth and Firestore
-- AI services: Groq-hosted Llama models for audit and consultation
+- AI services: Groq-hosted Llama models for audit, report chat, rewrites, and consultation
 - Export: jsPDF + html2canvas for downloadable report certificates
 
 ## Main Product Features
@@ -28,6 +28,8 @@ OmniAudit AI is a multimodal compliance auditing app for e-commerce product list
 - FSSAI category tagging and reasoning
 - Visual-fix suggestions for non-compliant packaging findings
 - Audit history dashboard with filtering and report review
+- Product Memory workspace with change intelligence and reminder cadence
+- Action Center with severity grouping, re-audit shortcuts, and resolution tracking
 
 ## Getting Started
 
@@ -93,7 +95,30 @@ OmniAudit AI is a multimodal compliance auditing app for e-commerce product list
 firebase deploy --only firestore:rules
 ```
 
+## Production Smoke Test
+
+Before each release, validate these flows in production:
+
+- Sign in and sign out
+- Run one text-only audit
+- Run one audit with packaging or listing images
+- Open a report and generate a PDF
+- Use Product Memory and reminder cadence controls
+- Try the Action Center re-audit flow
+- Toggle light and dark mode on desktop and mobile
+- Confirm `/api/health` responds and there are no Firestore permission errors
+
+## Legal Pages
+
+The deployed app now includes lightweight legal starter pages:
+
+- `/privacy.html`
+- `/terms.html`
+
+Replace these with organization-approved versions before a broader public launch.
+
 ## Notes
 
 - The current implementation uses secure server-side Groq routes, not client-side API keys.
 - The `.env` file should never be committed. If a real API key has ever been checked in, rotate it.
+- See [CHANGELOG.md](./CHANGELOG.md) for the current release summary.
