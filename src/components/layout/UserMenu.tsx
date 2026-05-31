@@ -1,6 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, User as UserIcon, Settings, Moon, Sun, ShieldCheck, ChevronDown, Bell } from 'lucide-react';
+import {
+  LogOut,
+  User as UserIcon,
+  Settings,
+  Moon,
+  Sun,
+  ShieldCheck,
+  ChevronDown,
+  Bell,
+} from 'lucide-react';
 import { User } from 'firebase/auth';
 
 interface UserMenuProps {
@@ -26,6 +35,8 @@ export const UserMenu: React.FC<UserMenuProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonId = 'user-menu-toggle';
+  const menuId = 'user-menu-dropdown';
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -52,15 +63,25 @@ export const UserMenu: React.FC<UserMenuProps> = ({
   }, [isOpen]);
 
   return (
-    <div className='relative' ref={menuRef}>
+    <div
+      className='relative'
+      ref={menuRef}>
       <button
+        id={buttonId}
+        type='button'
+        aria-haspopup='menu'
+        aria-controls={menuId}
+        aria-expanded={isOpen}
+        aria-label={isOpen ? 'Close user menu' : 'Open user menu'}
         onClick={() => setIsOpen(!isOpen)}
         className='group flex items-center gap-2 rounded border border-border-primary bg-theme-primary p-1 pl-2 pr-2 transition-all hover:border-amber-500/50 hover:bg-accent-primary-soft sm:pl-3'>
         <div className='hidden sm:flex flex-col items-end mr-1 text-right'>
           <span className='text-[10px] font-bold uppercase leading-none tracking-widest text-text-primary'>
             {user.displayName?.split(' ')[0] || 'Expert'}
           </span>
-          <span className='mt-1 text-[8px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>Suite Pro</span>
+          <span className='mt-1 text-[8px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>
+            Suite Pro
+          </span>
         </div>
         {user.photoURL ? (
           <img
@@ -73,25 +94,34 @@ export const UserMenu: React.FC<UserMenuProps> = ({
             {user.displayName?.charAt(0) || 'U'}
           </div>
         )}
-        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+        />
       </button>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            id={menuId}
+            role='menu'
+            aria-labelledby={buttonId}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             className='absolute right-0 top-full z-50 mt-3 w-[min(16rem,calc(100vw-1rem))] overflow-hidden rounded border border-border-primary bg-theme-primary shadow-2xl shadow-black/30'>
-
             {/* Header info */}
             <div className='border-b border-border-primary bg-theme-secondary p-5'>
-              <div className='mb-1 text-[9px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>Certified Auditor</div>
-              <div className='text-sm font-bold text-text-primary truncate'>{user.email}</div>
+              <div className='mb-1 text-[9px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>
+                Certified Auditor
+              </div>
+              <div className='text-sm font-bold text-text-primary truncate'>
+                {user.email}
+              </div>
             </div>
 
             <div className='p-2'>
               <button
+                type='button'
+                role='menuitem'
                 onClick={() => {
                   setIsOpen(false);
                   onOpenProfile();
@@ -104,6 +134,9 @@ export const UserMenu: React.FC<UserMenuProps> = ({
               </button>
 
               <button
+                type='button'
+                role='menuitemcheckbox'
+                aria-checked={isDarkMode}
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleDarkMode();
@@ -122,12 +155,17 @@ export const UserMenu: React.FC<UserMenuProps> = ({
                     </>
                   )}
                 </div>
-                <div className={`relative h-4 w-8 rounded transition-colors ${isDarkMode ? 'bg-[var(--accent-primary)]' : 'bg-gray-700'}`}>
-                  <div className={`absolute top-1 h-2 w-2 rounded bg-black transition-transform ${isDarkMode ? 'translate-x-5' : 'translate-x-1'}`} />
+                <div
+                  className={`relative h-4 w-8 rounded transition-colors ${isDarkMode ? 'bg-[var(--accent-primary)]' : 'bg-gray-700'}`}>
+                  <div
+                    className={`absolute top-1 h-2 w-2 rounded bg-black transition-transform ${isDarkMode ? 'translate-x-5' : 'translate-x-1'}`}
+                  />
                 </div>
               </button>
 
               <button
+                type='button'
+                role='menuitem'
                 onClick={() => {
                   setIsOpen(false);
                   onOpenUpdates();
@@ -145,6 +183,8 @@ export const UserMenu: React.FC<UserMenuProps> = ({
               </button>
 
               <button
+                type='button'
+                role='menuitem'
                 onClick={() => {
                   setIsOpen(false);
                   onOpenSettings();
@@ -159,6 +199,8 @@ export const UserMenu: React.FC<UserMenuProps> = ({
 
             <div className='border-t border-border-primary bg-theme-secondary p-2'>
               <button
+                type='button'
+                role='menuitem'
                 onClick={() => {
                   setIsOpen(false);
                   onLogout();
@@ -174,4 +216,3 @@ export const UserMenu: React.FC<UserMenuProps> = ({
     </div>
   );
 };
-

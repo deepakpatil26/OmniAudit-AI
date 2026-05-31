@@ -489,6 +489,8 @@ export function SuiteSettings({ onBack }: SuiteSettingsProps) {
             ].map((item) => {
               const Icon = item.icon;
               const enabled = preferences[item.key as keyof SuitePreferences];
+              const labelId = `suite-preference-label-${item.key}`;
+              const descriptionId = `suite-preference-description-${item.key}`;
 
               return (
                 <button
@@ -496,7 +498,8 @@ export function SuiteSettings({ onBack }: SuiteSettingsProps) {
                   type='button'
                   role='switch'
                   aria-checked={enabled}
-                  aria-label={`${item.title} ${enabled ? 'On' : 'Off'}`}
+                  aria-labelledby={labelId}
+                  aria-describedby={descriptionId}
                   onClick={() =>
                     updateSuitePreferences({
                       ...preferences,
@@ -510,10 +513,14 @@ export function SuiteSettings({ onBack }: SuiteSettingsProps) {
                         <Icon className='h-5 w-5 text-[var(--accent-primary)]' />
                       </div>
                       <div>
-                        <div className='text-sm font-bold text-text-primary'>
+                        <div
+                          id={labelId}
+                          className='text-sm font-bold text-text-primary'>
                           {item.title}
                         </div>
-                        <div className='text-sm text-text-secondary font-medium mt-2'>
+                        <div
+                          id={descriptionId}
+                          className='text-sm text-text-secondary font-medium mt-2'>
                           {item.body}
                         </div>
                       </div>

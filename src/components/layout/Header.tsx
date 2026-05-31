@@ -96,6 +96,8 @@ export const Header: React.FC<HeaderProps> = ({
 
           <div className='flex shrink-0 items-center gap-1.5 sm:gap-2'>
             <button
+              type='button'
+              aria-label='Open live consult'
               onClick={onShowLiveConsult}
               className='oa-button-ghost p-1.5 sm:p-2 sm:px-3'>
               <Mic className='w-4 h-4 sm:w-5 sm:h-5' />
@@ -105,6 +107,8 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             <button
+              type='button'
+              aria-label='Start new audit'
               onClick={onShowUploadModal}
               className='oa-button-primary group px-2 py-2 sm:px-5 sm:py-2.5'>
               <Plus className='w-4 h-4 transition-transform group-hover:rotate-90' />
