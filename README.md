@@ -1,124 +1,58 @@
-# OmniAudit AI
+# OmniAudit AI — quick overview
 
-OmniAudit AI is a multimodal compliance workspace for e-commerce product listings. It helps teams and solo operators review marketing claims, packaging images, marketplace screenshots, and supplier documents for labeling risks, greenwashing signals, shelf-life issues, and packaging-to-listing mismatches.
+OmniAudit AI is a snappy, multimodal compliance workspace for e-commerce teams — run audits on product text and images, generate structured reports, and track your audit history.
 
-[![Live Demo](https://img.shields.io/badge/Live-Demo-indigo?style=for-the-badge)](https://omni-audit-ai.vercel.app/)
+![Home](./public/home-page.png)
 
-## What It Does
+Why you'll like it:
 
-- Runs AI audits against product descriptions and uploaded media.
-- Compares physical packaging with digital marketplace listings.
-- Generates structured reports with findings, legal references, corrective actions, and compliance scores.
-- Tracks audit history, product memory, reminder cadence, and re-audit workflows per user.
-- Offers a quick-check experience while typing, a compliance copilot, and report-specific rewrite guidance.
+- Fast text + image audits
+- Compact dashboard with filtered audit feeds
+- Downloadable report PDFs and AI-assisted rewrite suggestions
 
-## Current Stack
+Screenshots
 
-- Frontend: React 19, Vite, Tailwind CSS 4, Framer Motion
-- Backend: Express wrapper for local Vite serving and API routes
-- Auth and data: Firebase Auth and Firestore
-- AI services: Groq-hosted Llama models for audit, report chat, rewrites, and consultation
-- Export: jsPDF + html2canvas for downloadable report certificates
+Home · Ledger · Report · Settings
 
-## Main Product Features
+![Ledger](./public/ledger-details.png) ![Report](./public/report-details.png) ![Settings](./public/settings-page.png)
 
-- Multimodal audit flow for text, images, and supplier docs
-- Digital twin mismatch detection for physical vs. marketplace assets
-- Shelf-life extraction and freshness status in reports
-- FSSAI category tagging and reasoning
-- Visual-fix suggestions for non-compliant packaging findings
-- Audit history dashboard with filtering and report review
-- Product Memory workspace with change intelligence and reminder cadence
-- Action Center with severity grouping, re-audit shortcuts, and resolution tracking
+Quick start
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- A Firebase project
-- A Groq API key
-
-### Installation
-
-1. Clone the repository.
+1. Clone and install
 
    ```bash
    git clone https://github.com/deepakpatil26/OmniAudit-AI.git
    cd OmniAudit-AI
-   ```
-
-2. Install dependencies.
-
-   ```bash
    npm install
    ```
 
-3. Create a `.env` file from `.env.example` and set your values.
+2. Copy `.env.example` → `.env` and set required keys (Firebase + GROQ)
 
-   Required variables:
-
-   ```env
-   GROQ_API_KEY=your_groq_api_key
-   APP_URL=https://omni-audit-ai.vercel.app/
-   VITE_FIREBASE_API_KEY=your_firebase_api_key
-   VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-   VITE_FIREBASE_PROJECT_ID=your_project_id
-   VITE_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
-   VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-   VITE_FIREBASE_APP_ID=your_app_id
-   VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
-   VITE_FIREBASE_DATABASE_ID=(default)
-   ```
-
-4. Start the app.
+3. Run locally
 
    ```bash
    npm run dev
    ```
 
-## Scripts
+Helpful scripts
 
-- `npm run dev`: start the local app server
-- `npm run build`: build the frontend
-- `npm run preview`: preview the production build
-- `npm run lint`: run TypeScript checks
-- `npm run clean`: remove the `dist` folder
+- `npm run dev` — dev server
+- `npm run build` — production build
+- `npm run preview` — preview build
+- `npm run lint` — TypeScript checks
+- `npm test` — run unit tests
 
-## Deployment Notes
+CI & tests
 
-- Build command: `npm run build`
-- Output directory: `dist`
-- Deploy `firestore.rules` with Firebase when updating data rules
+This repo includes a GitHub Actions workflow to run `lint` + `test` on pushes to `main`.
 
-```bash
-firebase deploy --only firestore:rules
-```
+Notes
 
-## Production Smoke Test
+- Keep `.env` secret. Rotate keys if accidentally committed.
+- See [CHANGELOG.md](./CHANGELOG.md) for release notes.
 
-Before each release, validate these flows in production:
+Logo
 
-- Sign in and sign out
-- Run one text-only audit
-- Run one audit with packaging or listing images
-- Open a report and generate a PDF
-- Use Product Memory and reminder cadence controls
-- Try the Action Center re-audit flow
-- Toggle light and dark mode on desktop and mobile
-- Confirm `/api/health` responds and there are no Firestore permission errors
+![OmniAudit](./public/light-logo.png)
 
-## Legal Pages
-
-The deployed app now includes lightweight legal starter pages:
-
-- `/privacy.html`
-- `/terms.html`
-
-Replace these with organization-approved versions before a broader public launch.
-
-## Notes
-
-- The current implementation uses secure server-side Groq routes, not client-side API keys.
-- The `.env` file should never be committed. If a real API key has ever been checked in, rotate it.
-- See [CHANGELOG.md](./CHANGELOG.md) for the current release summary.
+Enjoy — ping me if you want a one-click deploy script or a short demo video.
