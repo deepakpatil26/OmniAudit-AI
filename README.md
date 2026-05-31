@@ -36,6 +36,12 @@ A quick tour — click images to open the full versions.
    </figure>
 </div>
 
+## Animated demo
+
+A small auto-generated walkthrough of the app experience.
+
+![Demo](./public/demo.gif)
+
 Quick start
 
 1. Clone and install
@@ -61,6 +67,7 @@ Helpful scripts
 - `npm run preview` — preview build
 - `npm run lint` — TypeScript checks
 - `npm test` — run unit tests
+- `npm run make:gif` — regenerate `public/demo.gif` from screenshots
 
 CI & tests
 
