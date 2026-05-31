@@ -11,49 +11,49 @@ interface DashboardStatsProps {
 
 export function DashboardStats({ stats }: DashboardStatsProps) {
   return (
-    <div className='mb-12 grid grid-cols-1 gap-6 md:grid-cols-3'>
-      <div className='rounded-[2rem] border border-border-primary bg-theme-primary p-6 shadow-sm'>
-        <div className='flex items-center gap-4'>
-          <div className='flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'>
-            <TrendingDown className='w-6 h-6' />
+    <div className='grid grid-cols-1 gap-2 sm:gap-3 md:grid-cols-3'>
+      <div className='oa-panel p-4 sm:p-5 [--accent-line:var(--danger)]'>
+        <div className='flex items-center gap-3 sm:gap-4'>
+          <div className='flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded border border-border-primary bg-red-500/10 text-red-500 shrink-0'>
+            <TrendingDown className='w-5 h-5 sm:w-6 sm:h-6' />
           </div>
-          <div>
-            <div className='text-xs font-bold uppercase tracking-widest text-text-secondary'>
+          <div className='min-w-0'>
+            <div className='oa-label text-[8px] sm:text-[9px]'>
               Risk detections
             </div>
-            <div className='mt-1 text-3xl font-bold leading-none text-text-primary'>
+            <div className='font-display mt-1 text-2xl sm:text-3xl font-extrabold leading-none text-text-primary'>
               {stats.highRiskCount}
             </div>
           </div>
         </div>
       </div>
 
-      <div className='rounded-[2rem] border border-border-primary bg-theme-primary p-6 shadow-sm'>
-        <div className='flex items-center gap-4'>
-          <div className='flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'>
-            <ShieldCheck className='w-6 h-6' />
+      <div className='oa-panel p-4 sm:p-5 [--accent-line:var(--success)]'>
+        <div className='flex items-center gap-3 sm:gap-4'>
+          <div className='flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded border border-border-primary bg-emerald-500/10 text-emerald-500 shrink-0'>
+            <ShieldCheck className='w-5 h-5 sm:w-6 sm:h-6' />
           </div>
-          <div>
-            <div className='text-xs font-bold uppercase tracking-widest text-text-secondary'>
+          <div className='min-w-0'>
+            <div className='oa-label text-[8px] sm:text-[9px]'>
               Integrity Score
             </div>
-            <div className='mt-1 text-3xl font-bold leading-none text-text-primary'>
+            <div className='font-display mt-1 text-2xl sm:text-3xl font-extrabold leading-none text-text-primary'>
               {stats.avgScore}%
             </div>
           </div>
         </div>
       </div>
 
-      <div className='rounded-[2rem] border border-border-primary bg-theme-primary p-6 shadow-sm'>
-        <div className='flex items-center gap-4'>
-          <div className='flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400'>
-            <Globe className='w-6 h-6' />
+      <div className='oa-panel p-4 sm:p-5 [--accent-line:var(--info)]'>
+        <div className='flex items-center gap-3 sm:gap-4'>
+          <div className='flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded border border-border-primary bg-blue-500/10 text-blue-500 shrink-0'>
+            <Globe className='w-5 h-5 sm:w-6 sm:h-6' />
           </div>
-          <div>
-            <div className='text-xs font-bold uppercase tracking-widest text-text-secondary'>
+          <div className='min-w-0'>
+            <div className='oa-label text-[8px] sm:text-[9px]'>
               Market Coverage
             </div>
-            <div className='mt-1 text-3xl font-bold leading-none text-text-primary'>
+            <div className='font-display mt-1 text-2xl sm:text-3xl font-extrabold leading-none text-text-primary'>
               {stats.regions} Regions
             </div>
           </div>

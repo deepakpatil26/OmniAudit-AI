@@ -33,7 +33,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
       layoutId={audit.id}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className='bg-theme-primary border border-border-primary rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-xl transition-all relative group'>
+      className='oa-panel group relative overflow-hidden transition-colors hover:border-amber-500/50'>
       <div className='absolute top-6 right-6 z-10 flex items-center gap-2'>
         <AnimatePresence>
           {isConfirmingDelete ? (
@@ -41,7 +41,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
               initial={{ opacity: 0, scale: 0.8, x: 10 }}
               animate={{ opacity: 1, scale: 1, x: 0 }}
               exit={{ opacity: 0, scale: 0.8, x: 10 }}
-              className='flex items-center gap-3 bg-red-600 text-white px-4 py-2 rounded-2xl shadow-xl border border-red-700'>
+              className='flex items-center gap-3 rounded border border-red-700 bg-red-600 px-4 py-2 text-white shadow-xl'>
               <span className='text-[10px] font-black uppercase tracking-widest'>
                 Confirm?
               </span>
@@ -51,7 +51,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
                   onDelete?.(audit.id!);
                   setIsConfirmingDelete(false);
                 }}
-                className='p-1.5 hover:bg-white/20 rounded-lg transition-colors'>
+                className='rounded p-1.5 transition-colors hover:bg-white/20'>
                 <Trash2 className='w-4 h-4' />
               </button>
               <button
@@ -59,7 +59,7 @@ export const AuditCard: React.FC<AuditCardProps> = ({
                   e.stopPropagation();
                   setIsConfirmingDelete(false);
                 }}
-                className='p-1.5 hover:bg-white/20 rounded-lg transition-colors border-l border-white/20 pl-3 ml-1'>
+                className='ml-1 rounded border-l border-white/20 p-1.5 pl-3 transition-colors hover:bg-white/20'>
                 <X className='w-4 h-4' />
               </button>
             </motion.div>
@@ -69,38 +69,38 @@ export const AuditCard: React.FC<AuditCardProps> = ({
                 e.stopPropagation();
                 setIsConfirmingDelete(true);
               }}
-              className='p-2.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all opacity-0 group-hover:opacity-100 border border-gray-100 dark:border-gray-700 shadow-lg'>
+              className='rounded border border-border-primary bg-theme-secondary p-2.5 text-text-secondary opacity-0 transition-all hover:bg-red-500/10 hover:text-red-500 group-hover:opacity-100'>
               <Trash2 className='w-4.5 h-4.5' />
             </button>
           )}
         </AnimatePresence>
       </div>
 
-      <div className='p-8'>
-        <div className='flex justify-between items-start mb-6 pr-12'>
+      <div className='p-4 sm:p-6'>
+        <div className='flex justify-between items-start mb-5 pr-10'>
           <div>
-            <h3 className='text-xl font-bold text-text-primary tracking-tight leading-tight'>
+            <h3 className='font-display text-lg sm:text-xl font-bold leading-tight text-text-primary'>
               {audit.productName}
             </h3>
-            <p className='text-[10px] text-text-secondary font-bold uppercase tracking-widest mt-2'>
+            <p className='text-[9px] sm:text-[10px] text-text-secondary font-bold uppercase tracking-widest mt-2'>
               {audit.id ? audit.id.slice(0, 8) : 'NEW'} |{' '}
               {new Date(audit.createdAt).toLocaleDateString()}
             </p>
-            <p className='mt-2 text-[10px] font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400'>
+            <p className='mt-2 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>
               {formatRegionLabel(audit.region)}
             </p>
           </div>
-          <div className='flex flex-col items-end gap-3'>
+          <div className='flex flex-col items-end gap-2'>
             <div
-              className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-colors ${
+              className={`rounded border px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest transition-colors ${
                 hasDiscrepancy
-                  ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-100 dark:border-red-900/50'
-                  : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/50'
+                  ? 'border-red-500/20 bg-red-500/10 text-red-500'
+                  : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500'
               }`}>
               {hasDiscrepancy ? 'High Risk' : 'Compliant'}
             </div>
             {audit.complianceScore !== undefined && (
-              <div className='text-[10px] font-bold text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800 px-2 py-0.5 rounded-lg border border-gray-100 dark:border-gray-700'>
+              <div className='rounded border border-border-primary bg-theme-secondary px-2 py-0.5 text-[9px] font-bold text-text-secondary'>
                 Score: {audit.complianceScore}/100
               </div>
             )}
@@ -111,45 +111,45 @@ export const AuditCard: React.FC<AuditCardProps> = ({
           {audit.findings.slice(0, 2).map((finding, idx) => (
             <div
               key={idx}
-              className='flex gap-4 p-4 bg-theme-secondary/50 rounded-[1.25rem] border border-border-primary/50 transition-all hover:bg-theme-secondary'>
+              className='flex gap-3 rounded border border-border-primary bg-theme-secondary p-3 transition-all hover:border-amber-500/40'>
               {finding.status === 'discrepancy' ? (
-                <AlertTriangle className='w-5 h-5 text-amber-500 shrink-0 mt-0.5' />
+                <AlertTriangle className='w-4.5 h-4.5 text-amber-500 shrink-0 mt-0.5' />
               ) : (
-                <CheckCircle className='w-5 h-5 text-emerald-500 shrink-0 mt-0.5' />
+                <CheckCircle className='w-4.5 h-4.5 text-emerald-500 shrink-0 mt-0.5' />
               )}
               <div>
-                <p className='text-sm font-bold text-text-primary leading-tight mb-1'>
+                <p className='mb-1 text-sm font-bold leading-tight text-text-primary'>
                   {finding.claim}
                 </p>
-                <p className='text-[10px] text-text-secondary line-clamp-1 italic font-medium'>
+                <p className='text-[9px] text-text-secondary line-clamp-1 italic font-medium'>
                   {finding.reasoning}
                 </p>
               </div>
             </div>
           ))}
           {audit.findings.length > 2 && (
-            <p className='text-[10px] text-indigo-600 dark:text-indigo-400 font-black uppercase tracking-widest pl-2 mt-4'>
+            <p className='mt-4 pl-2 text-[10px] font-black uppercase tracking-widest text-[var(--accent-primary)]'>
               +{audit.findings.length - 2} more findings detected
             </p>
           )}
         </div>
 
-        <div className='flex items-center justify-between pt-6 border-t border-border-primary'>
+        <div className='flex items-center justify-between pt-5 border-t border-border-primary'>
           <div className='flex items-center gap-2'>
             {audit.twinMismatches && audit.twinMismatches.length > 0 && (
-              <div className='w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 flex items-center justify-center shadow-sm'>
-                <Search className='w-4 h-4 text-indigo-600 dark:text-indigo-400' />
+              <div className='flex h-8 w-8 items-center justify-center rounded border border-border-primary bg-blue-500/10'>
+                <Search className='w-4 h-4 text-blue-500' />
               </div>
             )}
             {audit.shelfLife && (
-              <div className='w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 flex items-center justify-center shadow-sm'>
-                <Shield className='w-4 h-4 text-emerald-600 dark:text-emerald-400' />
+              <div className='flex h-8 w-8 items-center justify-center rounded border border-border-primary bg-emerald-500/10'>
+                <Shield className='w-4 h-4 text-emerald-500' />
               </div>
             )}
           </div>
           <button
             onClick={() => onViewReport(audit)}
-            className='text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest flex items-center gap-1 group/btn hover:gap-2 transition-all p-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl'>
+            className='flex items-center gap-1 rounded px-3 py-2 text-[9px] font-bold uppercase tracking-widest text-[var(--accent-primary)] transition-all hover:gap-2 hover:bg-accent-primary-soft'>
             View Full Report{' '}
             <ChevronRight className='w-4 h-4 transition-transform group-hover/btn:translate-x-1' />
           </button>

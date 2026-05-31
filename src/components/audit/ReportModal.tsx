@@ -27,6 +27,7 @@ import {
   getFindingRewriteSuggestion,
   getReportConsultationResponse,
 } from '../../services/gemini';
+import { useDismissableLayer } from '../../hooks/useDismissableLayer';
 
 interface ReportModalProps {
   audit: AuditReport | null;
@@ -47,11 +48,10 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   resolvedActionIds,
   onResolveAction,
 }) => {
-  if (!audit) return null;
-
-  const shelfLifeActionId = getShelfLifeActionId(audit);
-  const twinMismatchActionId = getTwinMismatchActionId(audit);
-
+  const modalRef = useDismissableLayer<HTMLDivElement>(!!audit, onClose);
+  const [reportTab, setReportTab] = useState<
+    'summary' | 'findings' | 'evidence' | 'copilot'
+  >('summary');
   const [reportQuestion, setReportQuestion] = useState('');
   const [reportAnswer, setReportAnswer] = useState('');
   const [reportError, setReportError] = useState<string | null>(null);
@@ -75,6 +75,8 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   >({});
 
   const reportContext = useMemo(() => {
+    if (!audit) return '';
+
     const findingsSummary = audit.findings
       .map(
         (finding, index) =>
@@ -97,6 +99,21 @@ ${findingsSummary}`;
     'What should I fix first in this report?',
     'Why is the score not higher?',
     'How should I explain this audit to my team?',
+  ];
+
+  if (!audit) return null;
+
+  const shelfLifeActionId = getShelfLifeActionId(audit);
+  const twinMismatchActionId = getTwinMismatchActionId(audit);
+  const reportTabs: {
+    id: typeof reportTab;
+    label: string;
+    icon: React.ElementType;
+  }[] = [
+    { id: 'summary', label: 'Summary', icon: Info },
+    { id: 'findings', label: 'Findings', icon: CheckCircle },
+    { id: 'evidence', label: 'Evidence', icon: Shield },
+    { id: 'copilot', label: 'Copilot', icon: MessageSquareText },
   ];
 
   const handleAskReport = async (question: string) => {
@@ -162,51 +179,75 @@ ${findingsSummary}`;
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className='absolute inset-0 bg-gray-900/60 dark:bg-black/80 backdrop-blur-sm'
+          className='absolute inset-0 bg-black/70 backdrop-blur-sm'
         />
 
         <motion.div
+          ref={modalRef}
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className='relative flex max-h-[calc(100dvh-1rem)] w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] border border-border-primary bg-theme-primary shadow-2xl transition-colors duration-300 sm:max-h-[90vh] sm:rounded-[2.5rem]'>
+          className='oa-panel relative flex max-h-[calc(100dvh-1rem)] w-full max-w-5xl flex-col shadow-2xl shadow-black/30 transition-colors duration-300 sm:max-h-[90vh]'>
           <div className='sticky top-0 z-10 flex shrink-0 items-start justify-between gap-3 border-b border-border-primary bg-theme-primary px-4 py-4 sm:px-6 sm:py-6 lg:px-8'>
             <div className='min-w-0'>
               <div className='flex items-center gap-2 mb-1'>
-                <Shield className='w-4 h-4 text-indigo-600' />
-                <span className='text-[10px] font-bold uppercase tracking-[0.2em] text-text-secondary'>
+                <Shield className='h-4 w-4 text-[var(--accent-primary)]' />
+                <span className='oa-label'>
                   Statutory Report
                 </span>
               </div>
-              <h2 className='truncate pr-2 text-lg font-bold tracking-tight text-text-primary sm:text-2xl'>
+              <h2 className='font-display truncate pr-2 text-lg font-bold text-text-primary sm:text-2xl'>
                 {audit.productName}
               </h2>
             </div>
             <div className='flex shrink-0 items-center gap-2'>
               <button
                 onClick={() => onGeneratePDF(audit)}
-                className='hidden sm:flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 dark:shadow-none'>
+                className='oa-button-primary hidden px-6 py-2.5 sm:flex'>
                 <Download className='w-4 h-4' />
                 Certificate
               </button>
               <button
                 onClick={onClose}
-                className='p-2.5 text-text-secondary hover:text-text-primary hover:bg-theme-secondary rounded-xl transition-all'>
+                className='rounded p-2.5 text-text-secondary transition-all hover:bg-accent-primary-soft hover:text-text-primary'>
                 <X className='w-6 h-6' />
               </button>
             </div>
           </div>
 
+          <div className='flex shrink-0 gap-2 overflow-x-auto border-b border-border-primary bg-theme-secondary px-4 py-3 sm:px-6 lg:px-8'>
+            {reportTabs.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                type='button'
+                onClick={() => setReportTab(id)}
+                className={`flex shrink-0 items-center gap-2 rounded border-l-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                  reportTab === id
+                    ? 'border-[var(--accent-primary)] bg-accent-primary-soft text-[var(--accent-primary)]'
+                    : 'border-transparent text-text-secondary hover:bg-accent-primary-soft hover:text-text-primary'
+                }`}>
+                <Icon className='h-3.5 w-3.5' />
+                {label}
+              </button>
+            ))}
+          </div>
+
           <div className='flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8'>
-            <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
+            <div
+              className={
+                reportTab === 'summary' || reportTab === 'evidence'
+                  ? 'grid grid-cols-1 gap-8 lg:grid-cols-3'
+                  : 'space-y-8'
+              }>
+              {(reportTab === 'summary' || reportTab === 'evidence') && (
               <div className='lg:col-span-1 space-y-6'>
-                <div className='overflow-hidden rounded-[2rem] border-4 border-theme-secondary bg-theme-secondary shadow-inner'>
+                <div className='overflow-hidden rounded border border-border-primary bg-theme-secondary'>
                   <div
                     className={`grid gap-3 p-3 ${
                       audit.digitalImage ? 'grid-cols-2' : 'grid-cols-1'
                     }`}>
                     {audit.productImage && (
-                      <div className='overflow-hidden rounded-[1.5rem] border border-border-primary bg-theme-primary'>
+                      <div className='overflow-hidden rounded border border-border-primary bg-theme-primary'>
                         <div className='border-b border-border-primary px-3 py-2 text-[8px] font-bold uppercase tracking-widest text-text-secondary'>
                           Physical label
                         </div>
@@ -218,7 +259,7 @@ ${findingsSummary}`;
                       </div>
                     )}
                     {audit.digitalImage && (
-                        <div className='overflow-hidden rounded-[1.5rem] border border-border-primary bg-theme-primary'>
+                        <div className='overflow-hidden rounded border border-border-primary bg-theme-primary'>
                         <div className='border-b border-border-primary px-3 py-2 text-[8px] font-bold uppercase tracking-widest text-text-secondary'>
                           Digital listing
                         </div>
@@ -240,53 +281,61 @@ ${findingsSummary}`;
                   </div>
                 </div>
 
-                <div className='bg-indigo-600 rounded-[2rem] p-8 text-white shadow-xl shadow-indigo-100 dark:shadow-none relative overflow-hidden'>
-                  <div className='absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-2xl' />
-                  <p className='text-[10px] font-bold uppercase tracking-[0.2em] mb-2 opacity-80'>
+                <div className='relative overflow-hidden rounded border border-amber-500/30 bg-accent-primary-soft p-8 text-text-primary'>
+                  <p className='mb-2 text-[10px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>
                     Compliance Integrity
                   </p>
-                  <div className='text-5xl font-bold mb-1 tracking-tighter'>
+                  <div className='font-display mb-1 text-5xl font-extrabold text-text-primary'>
                     {audit.complianceScore}
                   </div>
-                  <p className='text-xs font-semibold opacity-60 uppercase tracking-widest'>
+                  <p className='text-xs font-semibold uppercase tracking-widest text-text-secondary'>
                     Statutory Score / 100
                   </p>
                 </div>
 
                 {audit.region && (
-                  <div className='bg-theme-secondary/50 p-6 rounded-2xl border border-border-primary'>
+                  <div className='rounded border border-border-primary bg-theme-secondary p-6'>
                     <h4 className='text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-4 flex items-center gap-2'>
-                      <Globe className='w-3 h-3 text-indigo-500' /> Target
+                      <Globe className='h-3 w-3 text-[var(--accent-primary)]' /> Target
                       Market
                     </h4>
                     <p className='text-sm font-bold text-text-primary'>
                       {formatRegionLabel(audit.region)}
                     </p>
                     {audit.fssaiCategory && (
-                      <div className='mt-3 inline-block px-3 py-1 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-lg text-[9px] font-bold uppercase tracking-widest border border-indigo-100 dark:border-indigo-800'>
+                      <div className='mt-3 inline-block rounded border border-amber-500/30 bg-accent-primary-soft px-3 py-1 text-[9px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>
                         FSSAI CAT: {audit.fssaiCategory}
                       </div>
                     )}
                   </div>
                 )}
               </div>
+              )}
 
-              <div className='lg:col-span-2 space-y-8'>
+              <div
+                className={
+                  reportTab === 'summary' || reportTab === 'evidence'
+                    ? 'space-y-8 lg:col-span-2'
+                    : 'space-y-8'
+                }>
+                {reportTab === 'summary' && (
                 <section>
                   <h4 className='text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em] mb-4 flex items-center gap-2'>
-                    <Info className='w-4 h-4 text-indigo-500' /> Expert Risk
+                    <Info className='h-4 w-4 text-[var(--accent-primary)]' /> Expert Risk
                     Summary
                   </h4>
-                  <div className='prose prose-sm prose-indigo dark:prose-invert max-w-none'>
+                  <div className='prose prose-sm dark:prose-invert max-w-none'>
                     <div className='text-text-secondary font-medium leading-relaxed italic'>
                       <ReactMarkdown>{audit.riskSummary}</ReactMarkdown>
                     </div>
                   </div>
                 </section>
+                )}
 
-                <section className='rounded-[2rem] border border-border-primary bg-theme-secondary/40 p-5 sm:p-6'>
+                {reportTab === 'copilot' && (
+                <section className='rounded border border-border-primary bg-theme-secondary p-5 sm:p-6'>
                   <div className='mb-4 flex items-center gap-2'>
-                    <MessageSquareText className='h-4 w-4 text-indigo-500' />
+                    <MessageSquareText className='h-4 w-4 text-[var(--accent-primary)]' />
                     <h4 className='text-[10px] font-bold uppercase tracking-[0.2em] text-text-secondary'>
                       Ask This Report
                     </h4>
@@ -297,7 +346,7 @@ ${findingsSummary}`;
                       <button
                         key={question}
                         onClick={() => void handleAskReport(question)}
-                        className='rounded-full border border-border-primary bg-theme-primary px-3 py-2 text-xs font-semibold text-text-primary transition-colors hover:border-indigo-200 hover:text-indigo-600 dark:hover:border-indigo-900/40'>
+                        className='rounded border border-border-primary bg-theme-primary px-3 py-2 text-xs font-semibold text-text-primary transition-colors hover:border-amber-500/50 hover:bg-accent-primary-soft hover:text-[var(--accent-primary)]'>
                         {question}
                       </button>
                     ))}
@@ -309,12 +358,12 @@ ${findingsSummary}`;
                       onChange={(event) => setReportQuestion(event.target.value)}
                       rows={3}
                       placeholder='Ask about the score, highest-priority fixes, or what this report means.'
-                      className='w-full resize-none rounded-[1.25rem] border border-border-primary bg-theme-primary p-4 text-sm font-medium text-text-primary outline-none transition-all focus:ring-2 focus:ring-indigo-500'
+                      className='w-full resize-none rounded border border-border-primary bg-theme-primary p-4 text-sm font-medium text-text-primary outline-none transition-all focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20'
                     />
                     <button
                       onClick={() => void handleAskReport(reportQuestion)}
                       disabled={isAnsweringReport || reportQuestion.trim().length < 3}
-                      className='mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-white transition-all hover:scale-[1.01] disabled:opacity-50 dark:bg-indigo-600'>
+                      className='oa-button-primary mt-3 w-full py-3 disabled:opacity-50'>
                       {isAnsweringReport ? (
                         <>
                           <Loader2 className='h-4 w-4 animate-spin' />
@@ -330,40 +379,41 @@ ${findingsSummary}`;
                   </div>
 
                   {(reportAnswer || reportError || isAnsweringReport) && (
-                    <div className='mt-4 rounded-[1.5rem] bg-slate-950 px-4 py-4 text-slate-100 dark:bg-[#070B16]'>
-                      <div className='mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-indigo-300'>
+                    <div className='mt-4 rounded border border-border-primary bg-theme-primary px-4 py-4 text-text-primary'>
+                      <div className='mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>
                         <Sparkles className='h-4 w-4' />
                         Report copilot
                       </div>
                       {isAnsweringReport ? (
-                        <div className='flex items-center gap-2 text-sm text-slate-300'>
+                        <div className='flex items-center gap-2 text-sm text-text-secondary'>
                           <Loader2 className='h-4 w-4 animate-spin' />
                           Reviewing this report...
                         </div>
                       ) : reportError ? (
-                        <p className='text-sm font-medium text-rose-300'>
+                        <p className='text-sm font-medium text-red-400'>
                           {reportError}
                         </p>
                       ) : (
-                        <p className='text-sm font-medium leading-relaxed text-slate-100'>
+                        <p className='text-sm font-medium leading-relaxed text-text-primary'>
                           {reportAnswer}
                         </p>
                       )}
                     </div>
                   )}
                 </section>
+                )}
 
-                {audit.twinMismatches && audit.twinMismatches.length > 0 && (
-                  <section className='bg-indigo-50/50 dark:bg-indigo-900/10 rounded-3xl p-6 border border-indigo-100 dark:border-indigo-900/30'>
+                {reportTab === 'findings' && audit.twinMismatches && audit.twinMismatches.length > 0 && (
+                  <section className='rounded border border-border-primary bg-theme-secondary p-6'>
                     <div className='mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
-                      <h4 className='text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2'>
+                      <h4 className='flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>
                         <Search className='w-4 h-4' /> Digital Twin Mismatch
                         Detection
                       </h4>
                       <button
                         onClick={() => onResolveAction(twinMismatchActionId)}
                         disabled={resolvedActionIds.includes(twinMismatchActionId)}
-                        className='rounded-xl border border-indigo-200 bg-white px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-indigo-600 transition-colors hover:bg-indigo-50 disabled:opacity-50 dark:border-indigo-900/40 dark:bg-[#10182A] dark:text-indigo-300 dark:hover:bg-indigo-900/20'>
+                        className='oa-button-ghost disabled:opacity-50'>
                         {resolvedActionIds.includes(twinMismatchActionId)
                           ? 'Mismatch task resolved'
                           : 'Mark mismatch resolved'}
@@ -373,13 +423,13 @@ ${findingsSummary}`;
                       <table className='w-full border-separate border-spacing-y-2'>
                         <thead>
                           <tr>
-                            <th className='text-left text-[9px] font-bold text-gray-400 uppercase tracking-widest px-4'>
+                            <th className='px-4 text-left text-[9px] font-bold uppercase tracking-widest text-text-secondary'>
                               Attribute
                             </th>
-                            <th className='text-left text-[9px] font-bold text-gray-400 uppercase tracking-widest px-4'>
+                            <th className='px-4 text-left text-[9px] font-bold uppercase tracking-widest text-text-secondary'>
                               Physical
                             </th>
-                            <th className='text-left text-[9px] font-bold text-indigo-500 uppercase tracking-widest px-4'>
+                            <th className='px-4 text-left text-[9px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>
                               Listing
                             </th>
                           </tr>
@@ -406,17 +456,17 @@ ${findingsSummary}`;
                   </section>
                 )}
 
-                {audit.shelfLife && (
+                {reportTab === 'findings' && audit.shelfLife && (
                   <div
-                    className={`p-6 rounded-[2rem] border-2 shadow-sm relative overflow-hidden transition-colors duration-300 ${
+                    className={`relative overflow-hidden rounded border p-6 transition-colors duration-300 ${
                       audit.shelfLife.status === 'expired'
-                        ? 'bg-red-50/50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30'
+                        ? 'border-red-500/30 bg-red-500/10'
                         : audit.shelfLife.status === 'near-expiry'
-                          ? 'bg-amber-50/50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/30'
-                          : 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/30'
+                          ? 'border-amber-500/30 bg-amber-500/10'
+                          : 'border-emerald-500/30 bg-emerald-500/10'
                     }`}>
                     <div
-                      className={`absolute top-0 right-0 py-1.5 px-6 text-white text-[9px] font-bold uppercase tracking-[0.2em] rounded-bl-2xl ${
+                        className={`absolute right-0 top-0 px-6 py-1.5 text-[9px] font-bold uppercase tracking-widest text-black ${
                         audit.shelfLife.status === 'expired'
                           ? 'bg-red-600'
                           : audit.shelfLife.status === 'near-expiry'
@@ -440,7 +490,7 @@ ${findingsSummary}`;
                       <button
                         onClick={() => onResolveAction(shelfLifeActionId)}
                         disabled={resolvedActionIds.includes(shelfLifeActionId)}
-                        className='rounded-xl border border-border-primary bg-theme-primary px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-text-primary transition-colors hover:bg-theme-secondary disabled:opacity-50'>
+                        className='oa-button-ghost disabled:opacity-50'>
                         {resolvedActionIds.includes(shelfLifeActionId)
                           ? 'Shelf-life task resolved'
                           : 'Mark shelf-life reviewed'}
@@ -451,7 +501,7 @@ ${findingsSummary}`;
                       <div className='space-y-4'>
                         <div className='flex items-end justify-between gap-4'>
                           <div>
-                            <p className='text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1'>
+                            <p className='mb-1 text-[9px] font-bold uppercase tracking-widest text-text-secondary'>
                               Exp Date
                             </p>
                             <div className='text-base font-bold text-text-primary tracking-tight leading-none'>
@@ -459,7 +509,7 @@ ${findingsSummary}`;
                             </div>
                           </div>
                           <div className='text-right'>
-                            <p className='text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1'>
+                            <p className='mb-1 text-[9px] font-bold uppercase tracking-widest text-text-secondary'>
                               Days Left
                             </p>
                             <div
@@ -474,7 +524,7 @@ ${findingsSummary}`;
                             </div>
                           </div>
                         </div>
-                        <div className='h-2.5 bg-theme-secondary border border-border-primary/50 rounded-full overflow-hidden'>
+                        <div className='h-2.5 overflow-hidden rounded border border-border-primary/50 bg-theme-secondary'>
                           <div
                             style={{
                               width: `${Math.max(
@@ -496,7 +546,7 @@ ${findingsSummary}`;
                         </div>
                       </div>
 
-                      <div className='p-5 bg-theme-primary/60 backdrop-blur-md rounded-2xl border border-border-primary'>
+                      <div className='rounded border border-border-primary bg-theme-primary p-5'>
                         <p className='text-[11px] text-text-secondary font-medium italic leading-relaxed'>
                           {audit.shelfLife.status === 'expired'
                             ? 'Product exceeds safety dates.'
@@ -509,8 +559,9 @@ ${findingsSummary}`;
                   </div>
                 )}
 
+                {reportTab === 'findings' && (
                 <section>
-                  <h4 className='text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2'>
+                  <h4 className='mb-4 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-text-secondary'>
                     <CheckCircle className='w-4 h-4 text-emerald-500' />{' '}
                     Statutory Verification
                   </h4>
@@ -518,10 +569,10 @@ ${findingsSummary}`;
                     {audit.findings.map((finding, idx) => (
                       <div
                         key={idx}
-                        className={`p-6 rounded-2xl border transition-all ${
+                        className={`rounded border p-6 transition-all ${
                           finding.status === 'discrepancy'
-                            ? 'bg-amber-50/30 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/30'
-                            : 'bg-emerald-50/30 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/30'
+                            ? 'border-amber-500/30 bg-amber-500/10'
+                            : 'border-emerald-500/30 bg-emerald-500/10'
                         }`}>
                         <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between'>
                           <div className='flex items-start gap-4 min-w-0'>
@@ -555,7 +606,7 @@ ${findingsSummary}`;
                               <button
                                 onClick={() => void handleGenerateRewrite(idx)}
                                 disabled={rewriteLoadingIndex !== null}
-                                className='flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50'>
+                                className='oa-button-primary disabled:opacity-50'>
                                 {rewriteLoadingIndex === idx ? (
                                   <>
                                     <Loader2 className='h-3 w-3 animate-spin' />
@@ -575,7 +626,7 @@ ${findingsSummary}`;
                                 disabled={resolvedActionIds.includes(
                                   getFindingActionId(audit, idx),
                                 )}
-                                className='flex items-center gap-2 rounded-lg border border-border-primary bg-theme-primary px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-text-primary transition-colors hover:bg-theme-secondary disabled:opacity-50'>
+                                className='oa-button-ghost disabled:opacity-50'>
                                 {resolvedActionIds.includes(getFindingActionId(audit, idx))
                                   ? 'Action resolved'
                                   : 'Mark action done'}
@@ -586,7 +637,7 @@ ${findingsSummary}`;
                               <button
                                 onClick={() => !isFixing && onFixImage(idx)}
                                 disabled={!!isFixing}
-                                className='flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 shadow-lg shadow-gray-200 dark:shadow-none'>
+                                className='oa-button-primary disabled:opacity-50'>
                                 {isFixing === idx.toString() ? (
                                   <>
                                     <Loader2 className='w-3 h-3 animate-spin' />
@@ -611,12 +662,12 @@ ${findingsSummary}`;
                         )}
 
                         {rewriteSuggestions[idx] && (
-                          <div className='mt-5 rounded-[1.5rem] border border-indigo-100 bg-indigo-50/80 p-4 dark:border-indigo-900/40 dark:bg-indigo-900/10'>
+                          <div className='mt-5 rounded border border-amber-500/30 bg-accent-primary-soft p-4'>
                             <div className='flex flex-wrap items-center justify-between gap-3'>
-                              <p className='text-[10px] font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400'>
+                              <p className='text-[10px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>
                                 AI Rewrite Suggestion
                               </p>
-                              <span className='rounded-full border border-indigo-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-indigo-600 dark:border-indigo-900/50 dark:bg-[#10182A] dark:text-indigo-300'>
+                              <span className='rounded border border-amber-500/30 bg-theme-primary px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>
                                 {rewriteSuggestions[idx].confidence} confidence
                               </span>
                             </div>
@@ -632,11 +683,42 @@ ${findingsSummary}`;
                     ))}
                   </div>
                 </section>
+                )}
+
+                {reportTab === 'evidence' && (
+                  <section className='rounded border border-border-primary bg-theme-secondary p-5 sm:p-6'>
+                    <div className='mb-4 flex items-center gap-2'>
+                      <Shield className='h-4 w-4 text-[var(--accent-primary)]' />
+                      <h4 className='text-[10px] font-bold uppercase tracking-widest text-text-secondary'>
+                        Evidence notes
+                      </h4>
+                    </div>
+                    <p className='text-sm font-medium leading-relaxed text-text-secondary'>
+                      Visual evidence and market metadata are separated here so
+                      reviewers can inspect source material without reading the
+                      whole report at once.
+                    </p>
+                    <div className='mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2'>
+                      <div className='rounded border border-border-primary bg-theme-primary p-4'>
+                        <div className='oa-label'>Physical source</div>
+                        <p className='mt-2 text-sm font-semibold text-text-primary'>
+                          {audit.productImage ? 'Attached' : 'Not provided'}
+                        </p>
+                      </div>
+                      <div className='rounded border border-border-primary bg-theme-primary p-4'>
+                        <div className='oa-label'>Digital source</div>
+                        <p className='mt-2 text-sm font-semibold text-text-primary'>
+                          {audit.digitalImage ? 'Attached' : 'Not provided'}
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+                )}
               </div>
             </div>
           </div>
 
-          <div className='flex shrink-0 flex-col gap-3 border-t border-border-primary bg-theme-secondary/50 px-4 py-4 text-center sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8'>
+          <div className='flex shrink-0 flex-col gap-3 border-t border-border-primary bg-theme-secondary px-4 py-4 text-center sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8'>
             <div className='text-[9px] text-text-secondary font-bold uppercase tracking-widest'>
               Generated by OmniAudit AI v3.0 Statutory Engine
             </div>
@@ -651,6 +733,7 @@ ${findingsSummary}`;
     </AnimatePresence>
   );
 };
+
 
 
 

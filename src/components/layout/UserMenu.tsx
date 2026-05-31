@@ -38,25 +38,38 @@ export const UserMenu: React.FC<UserMenuProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
   return (
     <div className='relative' ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className='flex items-center gap-2 p-1 pl-2 sm:pl-3 pr-2 bg-gray-100 dark:bg-gray-800 rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-all border border-transparent hover:border-gray-200 dark:hover:border-gray-600 group'>
+        className='group flex items-center gap-2 rounded border border-border-primary bg-theme-primary p-1 pl-2 pr-2 transition-all hover:border-amber-500/50 hover:bg-accent-primary-soft sm:pl-3'>
         <div className='hidden sm:flex flex-col items-end mr-1 text-right'>
-          <span className='text-[10px] font-bold text-text-primary uppercase tracking-tighter leading-none'>
+          <span className='text-[10px] font-bold uppercase leading-none tracking-widest text-text-primary'>
             {user.displayName?.split(' ')[0] || 'Expert'}
           </span>
-          <span className='text-[8px] font-bold text-indigo-500 uppercase tracking-widest mt-1'>Suite Pro</span>
+          <span className='mt-1 text-[8px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>Suite Pro</span>
         </div>
         {user.photoURL ? (
           <img
             src={user.photoURL}
             alt={user.displayName || 'User'}
-            className='w-8 h-8 rounded-xl border-2 border-indigo-500/20 group-hover:rotate-6 transition-transform'
+            className='h-8 w-8 rounded border border-amber-500/30 transition-transform group-hover:rotate-6'
           />
         ) : (
-          <div className='w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-xs font-bold'>
+          <div className='flex h-8 w-8 items-center justify-center rounded bg-[var(--accent-primary)] text-xs font-bold text-black'>
             {user.displayName?.charAt(0) || 'U'}
           </div>
         )}
@@ -69,11 +82,11 @@ export const UserMenu: React.FC<UserMenuProps> = ({
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className='absolute top-full right-0 mt-3 w-[min(16rem,calc(100vw-1rem))] bg-theme-primary border border-border-primary rounded-[2.5rem] shadow-2xl shadow-indigo-950/10 z-50 overflow-hidden'>
+            className='absolute right-0 top-full z-50 mt-3 w-[min(16rem,calc(100vw-1rem))] overflow-hidden rounded border border-border-primary bg-theme-primary shadow-2xl shadow-black/30'>
 
             {/* Header info */}
-            <div className='p-5 border-b border-border-primary bg-theme-secondary/50'>
-              <div className='text-[10px] font-bold text-indigo-500 uppercase tracking-widest mb-1'>Certified Auditor</div>
+            <div className='border-b border-border-primary bg-theme-secondary p-5'>
+              <div className='mb-1 text-[9px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>Certified Auditor</div>
               <div className='text-sm font-bold text-text-primary truncate'>{user.email}</div>
             </div>
 
@@ -83,9 +96,9 @@ export const UserMenu: React.FC<UserMenuProps> = ({
                   setIsOpen(false);
                   onOpenProfile();
                 }}
-                className='w-full flex items-center justify-between px-4 py-3 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors group'>
+                className='group flex w-full items-center justify-between rounded px-4 py-3 text-sm font-bold text-text-secondary transition-colors hover:bg-accent-primary-soft hover:text-text-primary'>
                 <div className='flex items-center gap-3'>
-                  <UserIcon className='w-4 h-4 text-gray-400 group-hover:text-indigo-500 transition-colors' />
+                  <UserIcon className='w-4 h-4 text-text-secondary transition-colors group-hover:text-[var(--accent-primary)]' />
                   Profile Suite
                 </div>
               </button>
@@ -95,7 +108,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
                   e.stopPropagation();
                   onToggleDarkMode();
                 }}
-                className='w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors group'>
+                className='group flex w-full items-center justify-between rounded px-4 py-3 text-sm font-semibold text-text-secondary transition-colors hover:bg-accent-primary-soft hover:text-text-primary'>
                 <div className='flex items-center gap-3'>
                   {isDarkMode ? (
                     <>
@@ -104,13 +117,13 @@ export const UserMenu: React.FC<UserMenuProps> = ({
                     </>
                   ) : (
                     <>
-                      <Moon className='w-4 h-4 text-indigo-500' />
+                      <Moon className='w-4 h-4 text-[var(--accent-primary)]' />
                       Dark Protocol
                     </>
                   )}
                 </div>
-                <div className={`w-8 h-4 rounded-full relative transition-colors ${isDarkMode ? 'bg-indigo-600' : 'bg-gray-200'}`}>
-                  <div className={`absolute top-1 w-2 h-2 bg-white rounded-full transition-transform ${isDarkMode ? 'translate-x-5' : 'translate-x-1'}`} />
+                <div className={`relative h-4 w-8 rounded transition-colors ${isDarkMode ? 'bg-[var(--accent-primary)]' : 'bg-gray-700'}`}>
+                  <div className={`absolute top-1 h-2 w-2 rounded bg-black transition-transform ${isDarkMode ? 'translate-x-5' : 'translate-x-1'}`} />
                 </div>
               </button>
 
@@ -119,7 +132,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
                   setIsOpen(false);
                   onOpenUpdates();
                 }}
-                className='w-full flex items-center justify-between px-4 py-3 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors group'>
+                className='group flex w-full items-center justify-between rounded px-4 py-3 text-sm font-bold text-text-secondary transition-colors hover:bg-accent-primary-soft hover:text-text-primary'>
                 <div className='flex items-center gap-3'>
                   <ShieldCheck className='w-4 h-4 text-emerald-500' />
                   Statutory Updates
@@ -136,21 +149,21 @@ export const UserMenu: React.FC<UserMenuProps> = ({
                   setIsOpen(false);
                   onOpenSettings();
                 }}
-                className='w-full flex items-center justify-between px-4 py-3 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors group'>
+                className='group flex w-full items-center justify-between rounded px-4 py-3 text-sm font-bold text-text-secondary transition-colors hover:bg-accent-primary-soft hover:text-text-primary'>
                 <div className='flex items-center gap-3'>
-                  <Settings className='w-4 h-4 text-gray-400 group-hover:text-amber-500 transition-colors' />
+                  <Settings className='w-4 h-4 text-text-secondary transition-colors group-hover:text-amber-500' />
                   Suite Settings
                 </div>
               </button>
             </div>
 
-            <div className='p-2 bg-theme-secondary/50 border-t border-border-primary'>
+            <div className='border-t border-border-primary bg-theme-secondary p-2'>
               <button
                 onClick={() => {
                   setIsOpen(false);
                   onLogout();
                 }}
-                className='w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-all group'>
+                className='group flex w-full items-center gap-3 rounded px-4 py-3 text-sm font-bold text-red-500 transition-all hover:bg-red-500/10'>
                 <LogOut className='w-4 h-4 group-hover:-translate-x-1 transition-transform' />
                 Terminate Session
               </button>
@@ -161,3 +174,4 @@ export const UserMenu: React.FC<UserMenuProps> = ({
     </div>
   );
 };
+

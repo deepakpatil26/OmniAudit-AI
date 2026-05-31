@@ -1,6 +1,7 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle } from 'lucide-react';
+import { useDismissableLayer } from '../../hooks/useDismissableLayer';
 
 interface ConfirmDialogProps {
   show: boolean;
@@ -19,6 +20,8 @@ export function ConfirmDialog({
   onCancel,
   onConfirm,
 }: ConfirmDialogProps) {
+  const dialogRef = useDismissableLayer<HTMLDivElement>(show, onCancel);
+
   return (
     <AnimatePresence>
       {show && (
@@ -31,14 +34,15 @@ export function ConfirmDialog({
             onClick={onCancel}
           />
           <motion.div
+            ref={dialogRef}
             initial={{ opacity: 0, y: 20, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.96 }}
-            className='relative w-full max-w-md rounded-[2rem] border border-border-primary bg-theme-primary p-8 shadow-2xl'>
-            <div className='mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400'>
+            className='oa-panel relative w-full max-w-md p-8 shadow-2xl shadow-black/30 [--accent-line:var(--danger)]'>
+            <div className='mb-5 flex h-12 w-12 items-center justify-center rounded border border-red-500/30 bg-red-500/10 text-red-500'>
               <AlertTriangle className='h-5 w-5' />
             </div>
-            <h3 className='text-xl font-bold text-text-primary'>{title}</h3>
+            <h3 className='font-display text-xl font-bold text-text-primary'>{title}</h3>
             <p className='mt-3 text-sm font-medium leading-relaxed text-text-secondary'>
               {description}
             </p>
@@ -46,12 +50,12 @@ export function ConfirmDialog({
             <div className='mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end'>
               <button
                 onClick={onCancel}
-                className='rounded-xl border border-border-primary px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-text-secondary transition-colors hover:bg-theme-secondary hover:text-text-primary'>
+                className='oa-button-ghost px-5 py-3'>
                 Cancel
               </button>
               <button
                 onClick={onConfirm}
-                className='rounded-xl bg-red-600 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-white transition-colors hover:bg-red-700'>
+                className='rounded bg-red-600 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-white transition-colors hover:bg-red-500'>
                 {confirmLabel}
               </button>
             </div>
@@ -61,3 +65,4 @@ export function ConfirmDialog({
     </AnimatePresence>
   );
 }
+

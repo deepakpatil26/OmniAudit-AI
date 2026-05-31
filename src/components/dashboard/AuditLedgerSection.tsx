@@ -30,31 +30,35 @@ export function AuditLedgerSection({
   onDeleteAudit,
 }: AuditLedgerSectionProps) {
   return (
-    <>
-      <div className='mb-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between'>
+    <section className='oa-panel px-4 py-5 sm:px-6 sm:py-7'>
+      <div className='mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between'>
         <div>
-          <h2 className='text-2xl font-bold text-text-primary tracking-tight leading-none'>
+          <div className='text-[9px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>
             Expert Ledger
+          </div>
+          <h2 className='font-display mt-3 text-xl sm:text-2xl font-bold leading-none text-text-primary'>
+            Audit history and review queue
           </h2>
-          <p className='mt-2 text-sm font-medium italic text-text-secondary'>
-            Manage your statutory compliance reports.
+          <p className='mt-2 max-w-2xl text-sm font-medium text-text-secondary'>
+            Search past audits, focus on higher-risk records, and reopen reports
+            without losing context.
           </p>
         </div>
-        <div className='flex w-full flex-wrap items-center gap-2 rounded-xl border border-border-primary bg-theme-primary p-1 shadow-sm md:w-auto'>
+        <div className='flex w-full flex-wrap items-center gap-1 rounded border border-border-primary bg-theme-secondary p-1 md:w-auto'>
           <button
             onClick={() => onSetFilter('all')}
-            className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${
+            className={`rounded px-3 py-2 text-[10px] font-bold uppercase tracking-widest transition-all ${
               filter === 'all'
-                ? 'bg-theme-secondary text-text-primary'
+                ? 'bg-accent-primary-soft text-[var(--accent-primary)]'
                 : 'text-text-secondary hover:text-text-primary'
             }`}>
             All Records
           </button>
           <button
             onClick={() => onSetFilter('high-risk')}
-            className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${
+            className={`rounded px-3 py-2 text-[10px] font-bold uppercase tracking-widest transition-all ${
               filter === 'high-risk'
-                ? 'bg-red-50 dark:bg-red-900/40 text-red-600'
+                ? 'bg-red-500/10 text-red-500'
                 : 'text-text-secondary hover:text-text-primary'
             }`}>
             High Risk
@@ -62,8 +66,8 @@ export function AuditLedgerSection({
         </div>
       </div>
 
-      <div className='mb-8 grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_220px]'>
-        <label className='flex items-center gap-3 rounded-[1.5rem] border border-border-primary bg-theme-primary px-4 py-4 shadow-sm'>
+      <div className='mb-6 grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_220px]'>
+        <label className='flex items-center gap-3 rounded border border-border-primary bg-theme-secondary px-3 py-3 sm:px-4 sm:py-4'>
           <Search className='h-4 w-4 text-text-secondary' />
           <input
             value={searchQuery}
@@ -72,7 +76,7 @@ export function AuditLedgerSection({
             className='w-full bg-transparent text-sm font-medium text-text-primary outline-none placeholder:text-text-secondary'
           />
         </label>
-        <label className='flex items-center gap-3 rounded-[1.5rem] border border-border-primary bg-theme-primary px-4 py-4 shadow-sm'>
+        <label className='flex items-center gap-3 rounded border border-border-primary bg-theme-secondary px-3 py-3 sm:px-4 sm:py-4'>
           <ArrowDownUp className='h-4 w-4 text-text-secondary' />
           <select
             value={sortBy}
@@ -87,18 +91,18 @@ export function AuditLedgerSection({
       </div>
 
       {filteredAudits.length === 0 ? (
-        <div className='rounded-[2.5rem] border-2 border-dashed border-gray-100 bg-white p-8 text-center dark:border-gray-800 dark:bg-gray-800/30 sm:p-16'>
-          <div className='mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-indigo-50 dark:bg-indigo-900/20'>
-            <Clock className='h-8 w-8 text-indigo-400 dark:text-indigo-600' />
+        <div className='rounded border border-dashed border-border-primary bg-theme-primary p-6 text-center sm:p-16'>
+          <div className='mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded border border-border-primary bg-accent-primary-soft'>
+            <Clock className='h-7 w-7 text-[var(--accent-primary)]' />
           </div>
-          <h3 className='mb-2 text-xl font-bold uppercase tracking-tight text-gray-900 dark:text-white'>
+          <h3 className='font-display mb-2 text-lg sm:text-xl font-bold uppercase text-text-primary'>
             {searchQuery.trim()
               ? 'No Matching Audits Found'
               : filter === 'all'
                 ? 'Statutory Ledger Empty'
                 : 'No Critical Deviations Found'}
           </h3>
-          <p className='mx-auto mb-10 max-w-sm font-medium text-gray-500 dark:text-gray-400'>
+          <p className='mx-auto mb-8 max-w-sm font-medium text-text-secondary'>
             {searchQuery.trim()
               ? 'Try a broader keyword, switch the risk filter, or sort by a different signal.'
               : 'Your compliance history is clear. Ready to initiate a new statutory verification?'}
@@ -106,13 +110,13 @@ export function AuditLedgerSection({
           {!searchQuery.trim() && (
             <button
               onClick={onStartAudit}
-              className='inline-flex items-center gap-3 rounded-2xl bg-indigo-600 px-10 py-5 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-indigo-100 transition-all hover:scale-[1.02] active:scale-[0.98] dark:shadow-none'>
+              className='oa-button-primary px-8 py-4'>
               Initiate Audit
             </button>
           )}
         </div>
       ) : (
-        <div className='grid grid-cols-1 gap-8 lg:grid-cols-2'>
+        <div className='grid grid-cols-1 gap-3 lg:grid-cols-2'>
           {filteredAudits.map((audit) => (
             <AuditCard
               key={audit.id}
@@ -123,6 +127,6 @@ export function AuditLedgerSection({
           ))}
         </div>
       )}
-    </>
+    </section>
   );
 }

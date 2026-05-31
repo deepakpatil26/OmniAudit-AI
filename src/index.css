@@ -1,4 +1,5 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@500;600;700;800&display=swap');
+@import 'tailwindcss';
 
 @theme {
   --color-bg-primary: var(--bg-primary);
@@ -6,44 +7,168 @@
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-border-primary: var(--border-primary);
-  --color-brand: #4f46e5;
+  --color-brand: #f59e0b;
 }
 
 /* Explicitly enable dark mode class support for Tailwind 4 utilities */
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
-  *, ::before, ::after {
+  *,
+  ::before,
+  ::after {
     transition-property: background-color, border-color, color, fill, stroke;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 300ms;
   }
 
   :root {
+    color-scheme: light;
     --bg-primary: #ffffff;
-    --bg-secondary: #f8f9fa;
+    --bg-secondary: #eef2f7;
+    --panel: #f8fafc;
     --text-primary: #111827;
-    --text-secondary: #6b7280;
-    --border-primary: #e5e7eb;
+    --text-secondary: #475569;
+    --text-dim: #64748b;
+    --border-primary: #cbd5e1;
+    --accent-primary: #d97706;
+    --accent-primary-hover: #b45309;
+    --accent-primary-soft: rgba(217, 119, 6, 0.1);
+    --accent-contrast: #111827;
+    --success: #10b981;
+    --danger: #ef4444;
+    --info: #3b82f6;
   }
 
   :root.dark {
-    --bg-primary: #0b0f19;
-    --bg-secondary: #111827;
-    --text-primary: #f9fafb;
-    --text-secondary: #9ca3af;
+    color-scheme: dark;
+    --bg-primary: #111418;
+    --bg-secondary: #0b0e12;
+    --panel: #161b22;
+    --text-primary: #f0f4f8;
+    --text-secondary: #8892a4;
+    --text-dim: #4b5563;
     --border-primary: #1f2937;
+    --accent-primary: #f59e0b;
+    --accent-primary-hover: #fbbf24;
+    --accent-primary-soft: rgba(245, 158, 11, 0.06);
+    --accent-contrast: #0b0e12;
+    --success: #10b981;
+    --danger: #ef4444;
+    --info: #3b82f6;
   }
 
   body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .font-display {
+    font-family: 'IBM Plex Sans', sans-serif;
+    letter-spacing: 0;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  input,
+  select,
+  textarea {
+    caret-color: var(--accent-primary);
+  }
+
+  select option {
     background-color: var(--bg-primary);
     color: var(--text-primary);
   }
 }
 
 /* Custom Theme-Aware Utilities */
-.bg-theme-primary { background-color: var(--bg-primary); }
-.bg-theme-secondary { background-color: var(--bg-secondary); }
-.text-theme-primary { color: var(--text-primary); }
-.text-theme-secondary { color: var(--text-secondary); }
-.border-theme-primary { border-color: var(--border-primary); }
+.bg-theme-primary {
+  background-color: var(--bg-primary);
+}
+.bg-theme-secondary {
+  background-color: var(--bg-secondary);
+}
+.bg-theme-panel {
+  background-color: var(--panel);
+}
+.text-theme-primary {
+  color: var(--text-primary);
+}
+.text-theme-secondary {
+  color: var(--text-secondary);
+}
+.border-theme-primary {
+  border-color: var(--border-primary);
+}
+.text-accent-primary {
+  color: var(--accent-primary);
+}
+.bg-accent-primary {
+  background-color: var(--accent-primary);
+}
+.bg-accent-primary-soft {
+  background-color: var(--accent-primary-soft);
+}
+
+@layer components {
+  .oa-label {
+    @apply text-[9px] font-bold uppercase tracking-widest;
+    color: var(--text-dim);
+  }
+
+  .oa-panel {
+    @apply relative overflow-hidden rounded-md border shadow-none;
+    background-color: var(--panel);
+    border-color: var(--border-primary);
+  }
+
+  .oa-panel::before {
+    content: '';
+    @apply absolute left-0 right-0 top-0 h-0.5;
+    background: var(--accent-line, var(--accent-primary));
+  }
+
+  .oa-chip {
+    @apply rounded border px-3 py-1 text-[9px] font-bold uppercase tracking-widest;
+    background-color: var(--bg-primary);
+    border-color: var(--border-primary);
+    color: var(--text-secondary);
+  }
+
+  .oa-button-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors;
+    background-color: var(--accent-primary);
+    color: var(--accent-contrast);
+  }
+
+  .oa-button-primary:hover {
+    background-color: var(--accent-primary-hover);
+  }
+
+  .oa-button-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded border px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors;
+    background-color: transparent;
+    border-color: var(--border-primary);
+    color: var(--text-secondary);
+  }
+
+  .oa-button-ghost:hover {
+    color: var(--text-primary);
+    background-color: var(--accent-primary-soft);
+    border-color: var(--accent-primary);
+  }
+}

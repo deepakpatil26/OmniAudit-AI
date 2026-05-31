@@ -12,14 +12,14 @@ interface ProductMemorySectionProps {
 function getReminderClasses(reminderState: ProductInsightDetail['reminderState']) {
   switch (reminderState) {
     case 'overdue':
-      return 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400';
+      return 'bg-red-500/10 text-red-500';
     case 'due-today':
-      return 'bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400';
+      return 'bg-red-500/10 text-red-500';
     case 'due-this-week':
-      return 'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400';
+      return 'bg-amber-500/10 text-amber-500';
     case 'on-track':
     default:
-      return 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400';
+      return 'bg-emerald-500/10 text-emerald-500';
   }
 }
 
@@ -30,14 +30,14 @@ export function ProductMemorySection({
   onStartReaudit,
 }: ProductMemorySectionProps) {
   return (
-    <section className='mb-12 rounded-[2.5rem] border border-border-primary bg-theme-primary p-6 shadow-sm sm:p-8'>
+    <section className='oa-panel px-5 py-6 sm:px-6 sm:py-7 [--accent-line:var(--info)]'>
       <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
         <div>
-          <div className='flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-indigo-500'>
+          <div className='flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>
             <Boxes className='h-4 w-4' />
             Product Memory
           </div>
-          <h3 className='mt-3 text-2xl font-bold tracking-tight text-text-primary'>
+          <h3 className='font-display mt-3 text-2xl font-bold text-text-primary'>
             Products OmniAudit remembers
           </h3>
           <p className='mt-2 max-w-2xl text-sm font-medium text-text-secondary'>
@@ -45,17 +45,17 @@ export function ProductMemorySection({
             and a focused detail workspace for daily compliance review.
           </p>
         </div>
-        <div className='rounded-2xl border border-border-primary bg-theme-secondary/50 px-4 py-3 text-sm font-semibold text-text-primary'>
+        <div className='oa-chip py-3 text-text-primary'>
           {productCount} saved product{productCount === 1 ? '' : 's'}
         </div>
       </div>
 
       {productInsights.length === 0 ? (
-        <div className='mt-6 rounded-[2rem] border border-dashed border-border-primary bg-theme-secondary/30 px-6 py-10 text-center'>
-          <div className='mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400'>
+        <div className='mt-6 rounded border border-dashed border-border-primary bg-theme-primary px-6 py-12 text-center'>
+          <div className='mx-auto flex h-14 w-14 items-center justify-center rounded border border-border-primary bg-blue-500/10 text-blue-500'>
             <Boxes className='h-7 w-7' />
           </div>
-          <h4 className='mt-4 text-lg font-bold text-text-primary'>
+          <h4 className='font-display mt-4 text-lg font-bold text-text-primary'>
             Product memory will appear here
           </h4>
           <p className='mt-2 text-sm font-medium text-text-secondary'>
@@ -64,36 +64,36 @@ export function ProductMemorySection({
           </p>
         </div>
       ) : (
-        <div className='mt-6 grid grid-cols-1 gap-4 xl:grid-cols-2'>
+        <div className='mt-6 grid grid-cols-1 gap-3 xl:grid-cols-2'>
           {productInsights.map((insight) => (
             <button
               key={insight.profile.id || insight.profile.productKey}
               type='button'
               onClick={() => onOpenProduct(insight)}
-              className='rounded-[1.75rem] border border-border-primary bg-theme-secondary/40 p-5 text-left transition-colors hover:bg-theme-secondary/70'>
-              <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
+              className='rounded border border-border-primary bg-theme-primary p-5 text-left transition-colors hover:border-amber-500/50 hover:bg-accent-primary-soft'>
+              <div className='flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between'>
                 <div className='min-w-0'>
                   <div className='flex flex-wrap items-center gap-2'>
-                    <p className='text-[10px] font-bold uppercase tracking-widest text-text-secondary'>
+                    <p className='oa-label'>
                       {insight.profile.region} market memory
                     </p>
                     <span
-                      className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${getReminderClasses(insight.reminderState)}`}>
+                      className={`rounded px-3 py-1 text-[9px] font-bold uppercase tracking-widest ${getReminderClasses(insight.reminderState)}`}>
                       {insight.reminderLabel}
                     </span>
-                    <span className='rounded-full border border-border-primary bg-theme-primary px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-text-secondary'>
+                    <span className='oa-chip'>
                       {insight.profile.productStatus}
                     </span>
                   </div>
-                  <h4 className='mt-2 text-lg font-bold leading-tight text-text-primary'>
+                  <h4 className='font-display mt-2 text-lg font-bold leading-tight text-text-primary'>
                     {insight.profile.productName}
                   </h4>
                   <p className='mt-2 text-sm font-medium leading-relaxed text-text-secondary'>
                     {insight.profile.latestRiskSummary}
                   </p>
 
-                  <div className='mt-4 rounded-[1.5rem] border border-border-primary bg-theme-primary px-4 py-4'>
-                    <div className='text-[10px] font-bold uppercase tracking-widest text-text-secondary'>
+                  <div className='mt-5 rounded border border-border-primary bg-theme-secondary px-4 py-4'>
+                    <div className='oa-label'>
                       What changed
                     </div>
                     <p className='mt-2 text-sm font-semibold leading-relaxed text-text-primary'>
@@ -106,21 +106,21 @@ export function ProductMemorySection({
                         {insight.newRiskClaims.map((claim) => (
                           <span
                             key={`new-${claim}`}
-                            className='rounded-full bg-red-50 px-3 py-1 text-red-600 dark:bg-red-900/20 dark:text-red-400'>
+                            className='rounded bg-red-500/10 px-3 py-1 text-red-500'>
                             New risk: {claim}
                           </span>
                         ))}
                         {insight.resolvedRiskClaims.map((claim) => (
                           <span
                             key={`resolved-${claim}`}
-                            className='rounded-full bg-emerald-50 px-3 py-1 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'>
+                            className='rounded bg-emerald-500/10 px-3 py-1 text-emerald-500'>
                             Resolved: {claim}
                           </span>
                         ))}
                         {insight.changedAttributes.map((attribute) => (
                           <span
                             key={`attribute-${attribute}`}
-                            className='rounded-full bg-indigo-50 px-3 py-1 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400'>
+                            className='rounded bg-blue-500/10 px-3 py-1 text-blue-500'>
                             Changed: {attribute}
                           </span>
                         ))}
@@ -128,32 +128,32 @@ export function ProductMemorySection({
                     )}
                   </div>
 
-                  <div className='mt-4 flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-widest'>
-                    <span className='rounded-full border border-border-primary bg-theme-primary px-3 py-1 text-text-secondary'>
+                  <div className='mt-5 flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-widest'>
+                    <span className='oa-chip'>
                       {insight.profile.auditCount} audits
                     </span>
-                    <span className='rounded-full border border-border-primary bg-theme-primary px-3 py-1 text-text-secondary'>
+                    <span className='oa-chip'>
                       {insight.profile.openFindingsCount} open findings
                     </span>
-                    <span className='rounded-full border border-border-primary bg-theme-primary px-3 py-1 text-text-secondary'>
+                    <span className='oa-chip'>
                       {insight.openActionCount} open actions
                     </span>
                   </div>
 
-                  <div className='mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2'>
-                    <div className='rounded-2xl border border-border-primary bg-theme-primary px-4 py-3'>
-                      <div className='text-[10px] font-bold uppercase tracking-widest text-text-secondary'>
+                  <div className='mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2'>
+                    <div className='rounded border border-border-primary bg-theme-secondary px-4 py-3'>
+                      <div className='oa-label'>
                         Score trend
                       </div>
                       <div className='mt-2 flex items-center gap-2 text-sm font-bold text-text-primary'>
-                        <TrendingUp className='h-4 w-4 text-indigo-500' />
+                        <TrendingUp className='h-4 w-4 text-[var(--accent-primary)]' />
                         {insight.scoreDelta === null
                           ? 'Awaiting comparison audit'
                           : `${insight.scoreDelta > 0 ? '+' : ''}${insight.scoreDelta} vs previous`}
                       </div>
                     </div>
-                    <div className='rounded-2xl border border-border-primary bg-theme-primary px-4 py-3'>
-                      <div className='text-[10px] font-bold uppercase tracking-widest text-text-secondary'>
+                    <div className='rounded border border-border-primary bg-theme-secondary px-4 py-3'>
+                      <div className='oa-label'>
                         Next review
                       </div>
                       <div className='mt-2 text-sm font-bold text-text-primary'>
@@ -171,7 +171,7 @@ export function ProductMemorySection({
                       event.stopPropagation();
                       onStartReaudit(insight);
                     }}
-                    className='rounded-xl border border-border-primary bg-theme-primary px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-text-primary transition-colors hover:bg-theme-secondary'>
+                    className='oa-button-ghost'>
                     Re-audit
                   </button>
                 </div>
@@ -183,3 +183,4 @@ export function ProductMemorySection({
     </section>
   );
 }
+

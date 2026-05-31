@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, X, CheckCircle, Loader2, MicOff } from 'lucide-react';
+import { useDismissableLayer } from '../../hooks/useDismissableLayer';
 
 interface LiveConsultOverlayProps {
   show: boolean;
@@ -17,6 +18,8 @@ export const LiveConsultOverlay: React.FC<LiveConsultOverlayProps> = ({
   aiResponse,
   isConsultantThinking,
 }) => {
+  const overlayRef = useDismissableLayer<HTMLDivElement>(show, onClose);
+
   return (
     <AnimatePresence>
       {show && (
@@ -26,54 +29,55 @@ export const LiveConsultOverlay: React.FC<LiveConsultOverlayProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className='absolute inset-0 bg-indigo-900/40 backdrop-blur-sm'
+            className='absolute inset-0 bg-black/60 backdrop-blur-sm'
           />
           <motion.div
+            ref={overlayRef}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            className='relative bg-indigo-950 w-full max-w-lg sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[80vh] sm:h-auto'>
-            <div className='p-6 border-b border-indigo-900/50 flex justify-between items-center'>
+            className='oa-panel relative flex h-[80vh] w-full max-w-lg flex-col shadow-2xl shadow-black/30 sm:h-auto'>
+            <div className='flex items-center justify-between border-b border-border-primary p-6'>
               <div className='flex items-center gap-3'>
-                <div className='w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center animate-pulse'>
-                  <Mic className='text-white w-5 h-5' />
+                <div className='flex h-10 w-10 animate-pulse items-center justify-center rounded border border-amber-500/30 bg-[var(--accent-primary)]'>
+                  <Mic className='h-5 w-5 text-black' />
                 </div>
                 <div>
-                  <h3 className='text-lg font-bold text-white'>
+                  <h3 className='font-display text-lg font-bold text-text-primary'>
                     Live AI Consultant
                   </h3>
-                  <p className='text-xs text-indigo-300'>
+                  <p className='text-[10px] font-bold uppercase tracking-widest text-text-secondary'>
                     Hands-free compliance verification
                   </p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className='p-2 hover:bg-indigo-900 rounded-full transition-colors'>
-                <X className='w-6 h-6 text-indigo-400' />
+                className='rounded p-2 transition-colors hover:bg-accent-primary-soft'>
+                <X className='h-6 w-6 text-text-secondary' />
               </button>
             </div>
 
-            <div className='flex-1 p-8 flex flex-col items-center justify-center text-center space-y-8'>
+            <div className='flex flex-1 flex-col items-center justify-center space-y-8 p-8 text-center'>
               <div className='relative'>
-                <div className='w-32 h-32 rounded-full border-4 border-indigo-600 flex items-center justify-center'>
-                  <div className='w-24 h-24 rounded-full bg-indigo-600 flex items-center justify-center'>
+                <div className='flex h-32 w-32 items-center justify-center rounded border-2 border-amber-500/40'>
+                  <div className='flex h-24 w-24 items-center justify-center rounded bg-amber-500/15'>
                     <motion.div
                       animate={{ scale: [1, 1.2, 1] }}
                       transition={{ repeat: Infinity, duration: 2 }}
-                      className='w-16 h-16 rounded-full bg-indigo-400 opacity-50'
+                      className='h-16 w-16 rounded bg-[var(--accent-primary)] opacity-50'
                     />
                   </div>
                 </div>
-                <div className='absolute -bottom-2 -right-2 bg-emerald-500 p-2 rounded-full border-4 border-indigo-950'>
-                  <CheckCircle className='w-4 h-4 text-white' />
+                <div className='absolute -bottom-2 -right-2 rounded border-4 border-[var(--panel)] bg-emerald-500 p-2'>
+                  <CheckCircle className='h-4 w-4 text-black' />
                 </div>
               </div>
 
-              <div className='space-y-4 w-full'>
-                <div className='p-4 bg-indigo-900/40 rounded-2xl border border-indigo-700/50 min-h-[60px] flex items-center justify-center'>
+              <div className='w-full space-y-4'>
+                <div className='flex min-h-[60px] items-center justify-center rounded border border-border-primary bg-theme-secondary p-4'>
                   <p
-                    className={`text-lg italic ${transcript ? 'text-indigo-200' : 'text-indigo-500'}`}>
+                    className={`text-lg italic ${transcript ? 'text-text-primary' : 'text-text-secondary'}`}>
                     {transcript || '"Ask me something..."'}
                   </p>
                 </div>
@@ -92,12 +96,12 @@ export const LiveConsultOverlay: React.FC<LiveConsultOverlayProps> = ({
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className='p-6 bg-indigo-600 rounded-3xl text-white shadow-2xl relative'>
-                      <p className='text-lg font-medium leading-relaxed font-outfit'>
+                      className='relative rounded border border-amber-500/30 bg-accent-primary-soft p-6 text-text-primary'>
+                      <p className='text-lg font-medium leading-relaxed'>
                         {aiResponse}
                       </p>
-                      <div className='absolute -bottom-2 -right-2 bg-emerald-500 p-1.5 rounded-full border-4 border-indigo-950'>
-                        <CheckCircle className='w-4 h-4 text-white' />
+                      <div className='absolute -bottom-2 -right-2 rounded border-4 border-[var(--panel)] bg-emerald-500 p-1.5'>
+                        <CheckCircle className='h-4 w-4 text-black' />
                       </div>
                     </motion.div>
                   )}
@@ -107,36 +111,36 @@ export const LiveConsultOverlay: React.FC<LiveConsultOverlayProps> = ({
               <div className='w-full space-y-4'>
                 <div className='flex justify-center gap-4'>
                   <div
-                    className={`w-1 h-8 bg-indigo-600 rounded-full ${isConsultantThinking || aiResponse ? 'animate-bounce' : ''}`}
+                    className={`h-8 w-1 rounded bg-[var(--accent-primary)] ${isConsultantThinking || aiResponse ? 'animate-bounce' : ''}`}
                     style={{ animationDelay: '0.1s' }}
                   />
                   <div
-                    className={`w-1 h-12 bg-indigo-400 rounded-full ${isConsultantThinking || aiResponse ? 'animate-bounce' : ''}`}
+                    className={`h-12 w-1 rounded bg-amber-300 ${isConsultantThinking || aiResponse ? 'animate-bounce' : ''}`}
                     style={{ animationDelay: '0.2s' }}
                   />
                   <div
-                    className={`w-1 h-10 bg-indigo-500 rounded-full ${isConsultantThinking || aiResponse ? 'animate-bounce' : ''}`}
+                    className={`h-10 w-1 rounded bg-amber-500 ${isConsultantThinking || aiResponse ? 'animate-bounce' : ''}`}
                     style={{ animationDelay: '0.3s' }}
                   />
                   <div
-                    className={`w-1 h-14 bg-indigo-600 rounded-full ${isConsultantThinking || aiResponse ? 'animate-bounce' : ''}`}
+                    className={`h-14 w-1 rounded bg-[var(--accent-primary)] ${isConsultantThinking || aiResponse ? 'animate-bounce' : ''}`}
                     style={{ animationDelay: '0.4s' }}
                   />
                   <div
-                    className={`w-1 h-8 bg-indigo-400 rounded-full ${isConsultantThinking || aiResponse ? 'animate-bounce' : ''}`}
+                    className={`h-8 w-1 rounded bg-amber-300 ${isConsultantThinking || aiResponse ? 'animate-bounce' : ''}`}
                     style={{ animationDelay: '0.5s' }}
                   />
                 </div>
               </div>
             </div>
 
-            <div className='p-8 bg-indigo-900/20 border-t border-indigo-900/50 flex flex-col gap-4'>
+            <div className='flex flex-col gap-4 border-t border-border-primary bg-theme-secondary p-8'>
               <button
                 onClick={onClose}
-                className='w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 shadow-lg shadow-indigo-500/20'>
-                <MicOff className='w-5 h-5' /> Stop Consultation
+                className='oa-button-primary flex w-full items-center justify-center gap-3 py-4'>
+                <MicOff className='h-5 w-5' /> Stop Consultation
               </button>
-              <p className='text-[10px] text-indigo-400 text-center uppercase tracking-widest font-bold'>
+              <p className='oa-label text-center'>
                 Secure server-side Groq Llama 3.3
               </p>
             </div>
@@ -146,3 +150,4 @@ export const LiveConsultOverlay: React.FC<LiveConsultOverlayProps> = ({
     </AnimatePresence>
   );
 };
+

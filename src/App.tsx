@@ -16,7 +16,15 @@ import {
 } from './lib/firebase';
 import { doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
-import { Loader2 } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowRight,
+  Boxes,
+  History,
+  Layers3,
+  LayoutDashboard,
+  Loader2,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuditReport } from './types/audit';
 import { AppView, AuditSort, SuitePreferences } from './types/app';
@@ -27,15 +35,14 @@ import {
   ProductInsightDetail,
 } from './lib/productIntelligence';
 import { useDashboardData } from './hooks/useDashboardData';
+import { useAppSettings } from './contexts/AppSettingsContext';
 import { useVoiceConsult } from './hooks/useVoiceConsult';
 import { useAuditForm } from './hooks/useAuditForm';
 import { Header } from './components/layout/Header';
 import { CopilotDock } from './components/ai/CopilotDock';
-import { DashboardStats } from './components/dashboard/DashboardStats';
-import { ActionCenterSection } from './components/dashboard/ActionCenterSection';
-import { ProductMemorySection } from './components/dashboard/ProductMemorySection';
-import { ProductDetailDrawer } from './components/dashboard/ProductDetailDrawer';
-import { AuditLedgerSection } from './components/dashboard/AuditLedgerSection';
+import { DashboardView } from './components/app/DashboardView';
+import { LoadingFallback } from './components/ui/LoadingFallback';
+import { RouteBoundary } from './components/ui/RouteBoundary';
 import { fixImage } from './services/gemini';
 import { ConfirmDialog } from './components/ui/ConfirmDialog';
 import { Toast } from './components/ui/Toast';
@@ -81,13 +88,7 @@ const LiveConsultOverlay = lazy(() =>
   })),
 );
 
-function LoadingFallback() {
-  return (
-    <div className='min-h-[30vh] flex items-center justify-center'>
-      <Loader2 className='w-7 h-7 animate-spin text-indigo-600' />
-    </div>
-  );
-}
+type LedgerTab = 'overview' | 'actions' | 'products' | 'records';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -102,9 +103,8 @@ export default function App() {
   const [view, setView] = useState<AppView>('landing');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<AuditSort>('newest');
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem('theme') === 'dark';
-  });
+  const [ledgerTab, setLedgerTab] = useState<LedgerTab>('overview');
+  // theme and suite preferences moved to AppSettingsContext
   const [toast, setToast] = useState<{
     message: string;
     tone: 'success' | 'error';
@@ -122,51 +122,8 @@ export default function App() {
   });
   const autoOpenedLatestRef = useRef<string | null>(null);
 
-  const [suitePreferences, setSuitePreferences] = useState<SuitePreferences>(
-    () => {
-      const saved = localStorage.getItem('suitePreferences');
-      if (!saved) {
-        return {
-          highlightCriticalUpdates: true,
-          condenseRoutineUpdates: false,
-          autoOpenLatestReport: false,
-          allowVisionAudits: true,
-        };
-      }
-
-      try {
-        const parsed = JSON.parse(saved) as
-          | SuitePreferences
-          | {
-              emailAlerts?: boolean;
-              weeklyDigest?: boolean;
-              autoOpenLatestReport?: boolean;
-              allowVisionAudits?: boolean;
-            };
-
-        return {
-          highlightCriticalUpdates:
-            'highlightCriticalUpdates' in parsed
-              ? !!parsed.highlightCriticalUpdates
-              : (parsed.emailAlerts ?? true),
-          condenseRoutineUpdates:
-            'condenseRoutineUpdates' in parsed
-              ? !!parsed.condenseRoutineUpdates
-              : (parsed.weeklyDigest ?? false),
-          autoOpenLatestReport: !!parsed.autoOpenLatestReport,
-          allowVisionAudits:
-            'allowVisionAudits' in parsed ? !!parsed.allowVisionAudits : true,
-        };
-      } catch {
-        return {
-          highlightCriticalUpdates: true,
-          condenseRoutineUpdates: false,
-          autoOpenLatestReport: false,
-          allowVisionAudits: true,
-        };
-      }
-    },
-  );
+  const { settings, updateDarkMode, updateSuitePreferences } = useAppSettings();
+  const suitePreferences = settings.suitePreferences;
 
   const { transcript, aiResponse, isConsultantThinking } =
     useVoiceConsult(showLiveConsult);
@@ -205,19 +162,7 @@ export default function App() {
     return () => window.clearTimeout(timer);
   }, [toast]);
 
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDarkMode]);
-
-  useEffect(() => {
-    localStorage.setItem('suitePreferences', JSON.stringify(suitePreferences));
-  }, [suitePreferences]);
+  // theme managed by AppSettingsContext
 
   useEffect(() => {
     localStorage.setItem(
@@ -269,7 +214,8 @@ export default function App() {
   useEffect(() => {
     if (!selectedProduct) return;
     const refreshed = productInsights.find(
-      (insight) => insight.profile.productKey === selectedProduct.profile.productKey,
+      (insight) =>
+        insight.profile.productKey === selectedProduct.profile.productKey,
     );
     if (refreshed) {
       setSelectedProduct(refreshed);
@@ -368,10 +314,10 @@ export default function App() {
     }
   };
 
-  const handleOpenAuditFromDrawer = (auditId: string) => {
-    const targetAudit = audits.find((audit) => audit.id === auditId);
-    if (targetAudit) {
-      setSelectedAudit(targetAudit);
+  const handleOpenAuditById = (auditId: string) => {
+    const audit = audits.find((item) => item.id === auditId);
+    if (audit) {
+      setSelectedAudit(audit);
     }
   };
 
@@ -527,10 +473,14 @@ export default function App() {
     }
   };
 
+  const topAction = actionTasks[0];
+  const topProduct = productInsights[0];
+  const latestAudit = audits[0];
+
   if (loading) {
     return (
-      <div className='min-h-screen bg-white dark:bg-[#0B0F19] flex items-center justify-center'>
-        <Loader2 className='w-8 h-8 animate-spin text-indigo-600' />
+      <div className='flex min-h-screen items-center justify-center bg-theme-secondary'>
+        <Loader2 className='h-8 w-8 animate-spin text-[var(--accent-primary)]' />
       </div>
     );
   }
@@ -550,87 +500,99 @@ export default function App() {
           isLoggedIn={!!user}
           currentView={view}
           user={user}
-          isDarkMode={isDarkMode}
-          onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+          isDarkMode={settings.isDarkMode}
+          onToggleDarkMode={() => updateDarkMode(!settings.isDarkMode)}
           showUpdatePulse={showUpdatePulse}
         />
       )}
 
       <AnimatePresence mode='wait'>
         {view === 'landing' && (
-          <motion.div
+          <RouteBoundary
             key='landing'
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}>
-            <Suspense fallback={<LoadingFallback />}>
+            fallback={<LoadingFallback />}
+            onReset={() => setView('landing')}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}>
               <Landing
                 onStartAudit={handleStartAuditClick}
                 isLoggedIn={!!user}
               />
-            </Suspense>
-          </motion.div>
+            </motion.div>
+          </RouteBoundary>
         )}
 
         {view === 'auth' && (
-          <motion.div
+          <RouteBoundary
             key='auth'
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}>
-            <Suspense fallback={<LoadingFallback />}>
-              <Auth onSignIn={signIn} onBack={() => setView('landing')} />
-            </Suspense>
-          </motion.div>
+            fallback={<LoadingFallback />}
+            onReset={() => setView('landing')}>
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}>
+              <Auth
+                onSignIn={signIn}
+                onBack={() => setView('landing')}
+              />
+            </motion.div>
+          </RouteBoundary>
         )}
 
         {view === 'dashboard' && user && (
-          <motion.main
+          <RouteBoundary
             key='dashboard'
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10'>
-            <DashboardStats stats={stats} />
-
-            <ActionCenterSection
-              actionTasks={actionTasks}
-              actionStats={actionStats}
-              groupedActionTasks={groupedActionTasks}
-              onOpenReport={setSelectedAudit}
-              onStartReaudit={handleStartReaudit}
-              onResolveTask={handleResolveAction}
-            />
-
-            <ProductMemorySection
-              productCount={productProfiles.length}
-              productInsights={productInsights}
-              onOpenProduct={setSelectedProduct}
-              onStartReaudit={handleStartProductReaudit}
-            />
-
-            <AuditLedgerSection
-              filter={filter}
-              searchQuery={searchQuery}
-              sortBy={sortBy}
-              filteredAudits={filteredAudits}
-              onSetFilter={setFilter}
-              onSetSearchQuery={setSearchQuery}
-              onSetSortBy={setSortBy}
-              onStartAudit={handleStartAuditClick}
-              onViewReport={setSelectedAudit}
-              onDeleteAudit={setAuditPendingDelete}
-            />
-          </motion.main>
+            fallback={<LoadingFallback />}
+            onReset={() => setView('landing')}>
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}>
+              <DashboardView
+                user={user}
+                audits={audits}
+                productProfiles={productProfiles}
+                filteredAudits={filteredAudits}
+                stats={stats}
+                actionTasks={actionTasks}
+                actionStats={actionStats}
+                groupedActionTasks={groupedActionTasks}
+                productInsights={productInsights}
+                selectedProduct={selectedProduct}
+                onSelectProduct={setSelectedProduct}
+                onSelectAudit={setSelectedAudit}
+                onOpenAuditById={handleOpenAuditById}
+                onStartAuditClick={handleStartAuditClick}
+                onStartReaudit={handleStartReaudit}
+                onStartProductReaudit={handleStartProductReaudit}
+                onResolveTask={handleResolveAction}
+                onUpdateProductCadence={handleUpdateProductCadence}
+                onMarkProductReviewed={handleMarkProductReviewed}
+                setAuditPendingDelete={setAuditPendingDelete}
+                filter={filter}
+                searchQuery={searchQuery}
+                sortBy={sortBy}
+                ledgerTab={ledgerTab}
+                setFilter={setFilter}
+                setSearchQuery={setSearchQuery}
+                setSortBy={setSortBy}
+                setLedgerTab={setLedgerTab}
+              />
+            </motion.div>
+          </RouteBoundary>
         )}
 
         {view === 'profile' && user && (
-          <motion.div
+          <RouteBoundary
             key='profile'
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}>
-            <Suspense fallback={<LoadingFallback />}>
+            fallback={<LoadingFallback />}
+            onReset={() => setView('dashboard')}>
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}>
               <ProfileSuite
                 user={user}
                 auditCount={audits.length}
@@ -638,52 +600,42 @@ export default function App() {
                 onBack={() => setView('dashboard')}
                 onSaveDisplayName={handleSaveDisplayName}
               />
-            </Suspense>
-          </motion.div>
+            </motion.div>
+          </RouteBoundary>
         )}
 
         {view === 'updates' && user && (
-          <motion.div
+          <RouteBoundary
             key='updates'
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}>
-            <Suspense fallback={<LoadingFallback />}>
+            fallback={<LoadingFallback />}
+            onReset={() => setView('dashboard')}>
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}>
               <StatutoryUpdates
                 audits={audits}
                 regions={coveredRegions}
-                preferences={suitePreferences}
                 onBack={() => setView('dashboard')}
               />
-            </Suspense>
-          </motion.div>
+            </motion.div>
+          </RouteBoundary>
         )}
 
         {view === 'settings' && user && (
-          <motion.div
+          <RouteBoundary
             key='settings'
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}>
-            <Suspense fallback={<LoadingFallback />}>
-              <SuiteSettings
-                preferences={suitePreferences}
-                onBack={() => setView('dashboard')}
-                onUpdatePreferences={setSuitePreferences}
-              />
-            </Suspense>
-          </motion.div>
+            fallback={<LoadingFallback />}
+            onReset={() => setView('dashboard')}>
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}>
+              <SuiteSettings onBack={() => setView('dashboard')} />
+            </motion.div>
+          </RouteBoundary>
         )}
       </AnimatePresence>
-
-      <ProductDetailDrawer
-        insight={selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-        onOpenAudit={handleOpenAuditFromDrawer}
-        onStartReaudit={handleStartProductReaudit}
-        onUpdateCadence={handleUpdateProductCadence}
-        onMarkReviewed={handleMarkProductReviewed}
-      />
 
       <Suspense fallback={null}>
         <UploadModal

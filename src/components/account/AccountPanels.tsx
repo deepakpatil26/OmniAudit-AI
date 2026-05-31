@@ -16,8 +16,8 @@ import {
 } from 'lucide-react';
 import type { AuditReport } from '../../types/audit';
 import type { SuitePreferences } from '../../types/app';
+import { useAppSettings } from '../../contexts/AppSettingsContext';
 import { formatRegionLabel } from '../../lib/auditConfig';
-import { AI_MODEL_ROUTING, AI_POLICY_SUMMARY } from '../../../shared/aiPolicy';
 
 interface SharedPanelProps {
   title: string;
@@ -40,15 +40,14 @@ function PanelShell({
         <div>
           <button
             onClick={onBack}
-            className='inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-4 hover:gap-3 transition-all'
-          >
+            className='mb-4 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[var(--accent-primary)] transition-all hover:gap-3'>
             <ArrowLeft className='w-3.5 h-3.5' />
             Back to Ledger
           </button>
-          <div className='text-[10px] font-bold uppercase tracking-[0.25em] text-indigo-500 mb-2'>
+          <div className='mb-2 text-[9px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>
             {eyebrow}
           </div>
-          <h1 className='text-3xl sm:text-4xl font-bold tracking-tight text-text-primary'>
+          <h1 className='font-display text-3xl font-bold text-text-primary sm:text-4xl'>
             {title}
           </h1>
           <p className='text-sm text-text-secondary font-medium mt-3 max-w-2xl'>
@@ -120,27 +119,26 @@ export function ProfileSuite({
       title='Profile Suite'
       eyebrow='Account Control'
       description='Review your authenticated account details and update how your profile appears across the OmniAudit workspace.'
-      onBack={onBack}
-    >
+      onBack={onBack}>
       <div className='grid grid-cols-1 xl:grid-cols-[1.1fr,0.9fr] gap-6 lg:gap-8'>
-        <section className='bg-theme-primary border border-border-primary rounded-[2rem] p-5 sm:p-8 shadow-sm'>
+        <section className='oa-panel p-5 sm:p-8'>
           <div className='flex flex-col sm:flex-row sm:items-center gap-5 mb-8'>
-            <div className='w-20 h-20 rounded-[2rem] bg-indigo-600 text-white flex items-center justify-center text-2xl font-bold shadow-xl shadow-indigo-100 dark:shadow-none'>
+            <div className='flex h-20 w-20 items-center justify-center rounded border border-amber-500/30 bg-[var(--accent-primary)] text-2xl font-bold text-black'>
               {user.photoURL ? (
                 <img
                   src={user.photoURL}
                   alt={user.displayName || 'User'}
-                  className='w-full h-full object-cover rounded-[2rem]'
+                  className='h-full w-full rounded object-cover'
                 />
               ) : (
                 initials
               )}
             </div>
             <div>
-              <div className='text-[10px] font-bold uppercase tracking-[0.25em] text-indigo-500 mb-2'>
+              <div className='mb-2 text-[9px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>
                 Authenticated identity
               </div>
-              <h2 className='text-2xl font-bold text-text-primary'>
+              <h2 className='font-display text-2xl font-bold text-text-primary'>
                 {user.displayName || 'Compliance Expert'}
               </h2>
               <p className='text-sm text-text-secondary font-medium mt-2'>
@@ -150,17 +148,21 @@ export function ProfileSuite({
           </div>
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-8'>
-            <div className='bg-theme-secondary/50 border border-border-primary rounded-[1.75rem] p-5'>
+            <div className='rounded border border-border-primary bg-theme-secondary p-5'>
               <div className='text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2'>
                 Suite records
               </div>
-              <div className='text-3xl font-bold text-text-primary'>{auditCount}</div>
+              <div className='font-display text-3xl font-bold text-text-primary'>
+                {auditCount}
+              </div>
             </div>
-            <div className='bg-theme-secondary/50 border border-border-primary rounded-[1.75rem] p-5'>
+            <div className='rounded border border-border-primary bg-theme-secondary p-5'>
               <div className='text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2'>
                 Regions covered
               </div>
-              <div className='text-3xl font-bold text-text-primary'>{regionCount}</div>
+              <div className='font-display text-3xl font-bold text-text-primary'>
+                {regionCount}
+              </div>
             </div>
           </div>
 
@@ -171,57 +173,63 @@ export function ProfileSuite({
             <input
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
-              className='w-full p-4 bg-theme-secondary border border-border-primary rounded-xl text-sm font-medium text-text-primary focus:ring-2 focus:ring-indigo-500 transition-all outline-none'
+              className='w-full rounded border border-border-primary bg-theme-secondary p-4 text-sm font-medium text-text-primary outline-none transition-all focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20'
               placeholder='Enter your name'
             />
           </label>
 
           <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6'>
             <p className='text-sm text-text-secondary min-h-6'>
-              {status || 'Your Google-authenticated account remains the source of truth.'}
+              {status ||
+                'Your Google-authenticated account remains the source of truth.'}
             </p>
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className='inline-flex items-center justify-center gap-2 bg-gray-900 dark:bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold uppercase tracking-widest text-[10px] hover:scale-[1.02] transition-all disabled:opacity-50 shadow-xl shadow-gray-200 dark:shadow-none'
-            >
+              className='oa-button-primary px-6 py-3 disabled:opacity-50'>
               <Save className='w-4 h-4' />
               {isSaving ? 'Saving...' : 'Save Profile'}
             </button>
           </div>
         </section>
 
-        <section className='bg-theme-primary border border-border-primary rounded-[2rem] p-5 sm:p-8 shadow-sm'>
-          <div className='text-[10px] font-bold uppercase tracking-[0.25em] text-indigo-500 mb-4'>
+        <section className='oa-panel p-5 sm:p-8'>
+          <div className='mb-4 text-[9px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>
             Identity snapshot
           </div>
           <div className='space-y-4'>
-            <div className='flex items-start gap-4 p-5 bg-theme-secondary/50 border border-border-primary rounded-[1.5rem]'>
-              <UserRound className='w-5 h-5 text-indigo-500 mt-0.5' />
+            <div className='flex items-start gap-4 rounded border border-border-primary bg-theme-secondary p-5'>
+              <UserRound className='mt-0.5 h-5 w-5 text-[var(--accent-primary)]' />
               <div>
                 <div className='text-xs font-bold uppercase tracking-widest text-text-secondary mb-1'>
                   User ID
                 </div>
-                <div className='text-sm font-medium text-text-primary break-all'>{user.uid}</div>
+                <div className='text-sm font-medium text-text-primary break-all'>
+                  {user.uid}
+                </div>
               </div>
             </div>
-            <div className='flex items-start gap-4 p-5 bg-theme-secondary/50 border border-border-primary rounded-[1.5rem]'>
+            <div className='flex items-start gap-4 rounded border border-border-primary bg-theme-secondary p-5'>
               <ShieldCheck className='w-5 h-5 text-emerald-500 mt-0.5' />
               <div>
                 <div className='text-xs font-bold uppercase tracking-widest text-text-secondary mb-1'>
                   Sign-in method
                 </div>
-                <div className='text-sm font-medium text-text-primary'>Google Identity Provider</div>
+                <div className='text-sm font-medium text-text-primary'>
+                  Google Identity Provider
+                </div>
               </div>
             </div>
-            <div className='flex items-start gap-4 p-5 bg-theme-secondary/50 border border-border-primary rounded-[1.5rem]'>
+            <div className='flex items-start gap-4 rounded border border-border-primary bg-theme-secondary p-5'>
               <CheckCircle2 className='w-5 h-5 text-amber-500 mt-0.5' />
               <div>
                 <div className='text-xs font-bold uppercase tracking-widest text-text-secondary mb-1'>
                   Verification state
                 </div>
                 <div className='text-sm font-medium text-text-primary'>
-                  {user.emailVerified ? 'Verified contact email' : 'Email verification pending'}
+                  {user.emailVerified
+                    ? 'Verified contact email'
+                    : 'Email verification pending'}
                 </div>
               </div>
             </div>
@@ -245,16 +253,16 @@ interface StatutoryUpdateItem {
 interface StatutoryUpdatesProps {
   audits: AuditReport[];
   regions: string[];
-  preferences: SuitePreferences;
   onBack: () => void;
 }
 
 export function StatutoryUpdates({
   audits,
   regions,
-  preferences,
   onBack,
 }: StatutoryUpdatesProps) {
+  const { settings } = useAppSettings();
+  const preferences = settings.suitePreferences;
   const [filter, setFilter] = useState<'all' | 'critical'>('all');
 
   const updates = useMemo<StatutoryUpdateItem[]>(() => {
@@ -311,38 +319,36 @@ export function StatutoryUpdates({
       title='Statutory Updates'
       eyebrow='Compliance Watch'
       description='Track regulation-facing reminders generated from the regions currently represented in your audit ledger.'
-      onBack={onBack}
-    >
+      onBack={onBack}>
       <div className='grid grid-cols-1 xl:grid-cols-[1.2fr,0.8fr] gap-6 lg:gap-8'>
-        <section className='bg-theme-primary border border-border-primary rounded-[2rem] p-5 sm:p-8 shadow-sm'>
+        <section className='oa-panel p-5 sm:p-8'>
           <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8'>
             <div>
-              <div className='text-[10px] font-bold uppercase tracking-[0.25em] text-indigo-500 mb-2'>
+              <div className='mb-2 text-[9px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>
                 Update stream
               </div>
               <h2 className='text-2xl font-bold text-text-primary'>
-                {visibleUpdates.length} active notice{visibleUpdates.length === 1 ? '' : 's'}
+                {visibleUpdates.length} active notice
+                {visibleUpdates.length === 1 ? '' : 's'}
               </h2>
             </div>
-            <div className='flex items-center gap-2 bg-theme-secondary/50 p-1 rounded-xl border border-border-primary shadow-sm'>
+            <div className='flex items-center gap-2 rounded border border-border-primary bg-theme-secondary p-1'>
               <button
                 onClick={() => setFilter('all')}
-                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${
+                className={`rounded px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-all ${
                   filter === 'all'
-                    ? 'bg-theme-primary text-text-primary'
+                    ? 'bg-accent-primary-soft text-[var(--accent-primary)]'
                     : 'text-text-secondary hover:text-text-primary'
-                }`}
-              >
+                }`}>
                 All Notices
               </button>
               <button
                 onClick={() => setFilter('critical')}
-                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${
+                className={`rounded px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-all ${
                   filter === 'critical'
-                    ? 'bg-red-50 dark:bg-red-900/40 text-red-600'
+                    ? 'bg-red-500/10 text-red-500'
                     : 'text-text-secondary hover:text-text-primary'
-                }`}
-              >
+                }`}>
                 Critical
               </button>
             </div>
@@ -352,26 +358,26 @@ export function StatutoryUpdates({
             {visibleUpdates.map((item) => (
               <article
                 key={item.id}
-                className='border border-border-primary rounded-[1.75rem] p-5 bg-theme-secondary/40'
-              >
+                className='rounded border border-border-primary bg-theme-secondary p-5'>
                 <div className='flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3'>
                   <div>
                     <div className='text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2'>
                       {formatRegionLabel(item.region)} | {item.category}
                     </div>
-                    <h3 className='text-lg font-bold text-text-primary'>{item.title}</h3>
+                    <h3 className='text-lg font-bold text-text-primary'>
+                      {item.title}
+                    </h3>
                   </div>
                   <div className='flex flex-wrap items-center gap-2'>
                     <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                      className={`inline-flex items-center rounded px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${
                         item.priority === 'Critical'
-                          ? 'bg-red-50 dark:bg-red-900/30 text-red-600'
-                          : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
-                      }`}
-                    >
+                          ? 'bg-red-500/10 text-red-500'
+                          : 'bg-emerald-500/10 text-emerald-500'
+                      }`}>
                       {item.priority}
                     </span>
-                    <span className='inline-flex items-center gap-2 rounded-full bg-theme-primary px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-text-secondary border border-border-primary'>
+                    <span className='inline-flex items-center gap-2 rounded border border-border-primary bg-theme-primary px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-text-secondary'>
                       <CalendarClock className='w-3 h-3' />
                       {item.dueLabel}
                     </span>
@@ -385,25 +391,27 @@ export function StatutoryUpdates({
           </div>
         </section>
 
-        <section className='bg-theme-primary border border-border-primary rounded-[2rem] p-5 sm:p-8 shadow-sm'>
-          <div className='text-[10px] font-bold uppercase tracking-[0.25em] text-indigo-500 mb-4'>
+        <section className='oa-panel p-5 sm:p-8'>
+          <div className='mb-4 text-[9px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>
             Coverage summary
           </div>
           <div className='space-y-4'>
-            <div className='p-5 bg-theme-secondary/50 border border-border-primary rounded-[1.5rem]'>
+            <div className='rounded border border-border-primary bg-theme-secondary p-5'>
               <div className='flex items-center gap-3 mb-2'>
-                <Globe2 className='w-5 h-5 text-indigo-500' />
+                <Globe2 className='h-5 w-5 text-[var(--accent-primary)]' />
                 <span className='text-xs font-bold uppercase tracking-widest text-text-secondary'>
                   Regions monitored
                 </span>
               </div>
               <div className='text-sm text-text-primary font-medium'>
                 {regions.length > 0
-                  ? regions.map((region) => formatRegionLabel(region)).join(', ')
+                  ? regions
+                      .map((region) => formatRegionLabel(region))
+                      .join(', ')
                   : 'Global baseline'}
               </div>
             </div>
-            <div className='p-5 bg-theme-secondary/50 border border-border-primary rounded-[1.5rem]'>
+            <div className='rounded border border-border-primary bg-theme-secondary p-5'>
               <div className='flex items-center gap-3 mb-2'>
                 <BookOpenCheck className='w-5 h-5 text-emerald-500' />
                 <span className='text-xs font-bold uppercase tracking-widest text-text-secondary'>
@@ -411,10 +419,11 @@ export function StatutoryUpdates({
                 </span>
               </div>
               <div className='text-sm text-text-primary font-medium'>
-                Notices now respond to saved audits, mismatch risk, and shelf-life severity instead of static placeholder text.
+                Notices now respond to saved audits, mismatch risk, and
+                shelf-life severity instead of static placeholder text.
               </div>
             </div>
-            <div className='p-5 bg-theme-secondary/50 border border-border-primary rounded-[1.5rem]'>
+            <div className='rounded border border-border-primary bg-theme-secondary p-5'>
               <div className='flex items-center gap-3 mb-2'>
                 <Filter className='w-5 h-5 text-amber-500' />
                 <span className='text-xs font-bold uppercase tracking-widest text-text-secondary'>
@@ -437,25 +446,20 @@ export function StatutoryUpdates({
 }
 
 interface SuiteSettingsProps {
-  preferences: SuitePreferences;
   onBack: () => void;
-  onUpdatePreferences: (preferences: SuitePreferences) => void;
 }
 
-export function SuiteSettings({
-  preferences,
-  onBack,
-  onUpdatePreferences,
-}: SuiteSettingsProps) {
+export function SuiteSettings({ onBack }: SuiteSettingsProps) {
+  const { settings, updateSuitePreferences } = useAppSettings();
+  const preferences = settings.suitePreferences;
   return (
     <PanelShell
       title='Suite Settings'
       eyebrow='Workspace Preferences'
       description='Control the behavior of real in-app compliance signals, dashboard convenience options, and AI routing for your signed-in workspace.'
-      onBack={onBack}
-    >
+      onBack={onBack}>
       <div className='grid grid-cols-1 xl:grid-cols-[1.15fr,0.85fr] gap-6 lg:gap-8'>
-        <section className='bg-theme-primary border border-border-primary rounded-[2rem] p-5 sm:p-8 shadow-sm'>
+        <section className='oa-panel p-5 sm:p-8'>
           <div className='space-y-4'>
             {[
               {
@@ -489,31 +493,37 @@ export function SuiteSettings({
               return (
                 <button
                   key={item.key}
+                  type='button'
+                  role='switch'
+                  aria-checked={enabled}
+                  aria-label={`${item.title} ${enabled ? 'On' : 'Off'}`}
                   onClick={() =>
-                    onUpdatePreferences({
+                    updateSuitePreferences({
                       ...preferences,
                       [item.key]: !enabled,
                     })
                   }
-                  className='w-full text-left p-5 bg-theme-secondary/50 border border-border-primary rounded-[1.75rem] hover:bg-theme-secondary transition-colors'
-                >
+                  className='w-full rounded border border-border-primary bg-theme-secondary p-5 text-left transition-colors hover:bg-accent-primary-soft focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:ring-offset-2 focus:ring-offset-theme-secondary'>
                   <div className='flex items-start justify-between gap-4'>
                     <div className='flex items-start gap-4'>
-                      <div className='w-11 h-11 rounded-2xl bg-theme-primary border border-border-primary flex items-center justify-center'>
-                        <Icon className='w-5 h-5 text-indigo-500' />
+                      <div className='flex h-11 w-11 items-center justify-center rounded border border-border-primary bg-theme-primary'>
+                        <Icon className='h-5 w-5 text-[var(--accent-primary)]' />
                       </div>
                       <div>
-                        <div className='text-sm font-bold text-text-primary'>{item.title}</div>
-                        <div className='text-sm text-text-secondary font-medium mt-2'>{item.body}</div>
+                        <div className='text-sm font-bold text-text-primary'>
+                          {item.title}
+                        </div>
+                        <div className='text-sm text-text-secondary font-medium mt-2'>
+                          {item.body}
+                        </div>
                       </div>
                     </div>
                     <div
-                      className={`w-11 h-6 rounded-full relative transition-colors shrink-0 ${
-                        enabled ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-700'
-                      }`}
-                    >
+                      className={`relative h-6 w-11 shrink-0 rounded transition-colors ${
+                        enabled ? 'bg-[var(--accent-primary)]' : 'bg-gray-700'
+                      }`}>
                       <div
-                        className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                        className={`absolute top-1 h-4 w-4 rounded bg-black transition-transform ${
                           enabled ? 'translate-x-6' : 'translate-x-1'
                         }`}
                       />
@@ -525,53 +535,48 @@ export function SuiteSettings({
           </div>
         </section>
 
-        <section className='bg-theme-primary border border-border-primary rounded-[2rem] p-5 sm:p-8 shadow-sm'>
-          <div className='text-[10px] font-bold uppercase tracking-[0.25em] text-indigo-500 mb-4'>
+        <section className='oa-panel p-5 sm:p-8'>
+          <div className='mb-4 text-[9px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>
             Current profile
           </div>
           <div className='space-y-4'>
-            <div className='p-5 bg-theme-secondary/50 border border-border-primary rounded-[1.5rem]'>
+            <div className='rounded border border-border-primary bg-theme-secondary p-5'>
               <div className='text-xs font-bold uppercase tracking-widest text-text-secondary mb-2'>
                 Active preferences
               </div>
               <div className='space-y-2 text-sm text-text-primary font-medium'>
                 <div>
-                  Highlight critical updates: {preferences.highlightCriticalUpdates ? 'On' : 'Off'}
+                  Highlight critical updates:{' '}
+                  {preferences.highlightCriticalUpdates ? 'On' : 'Off'}
                 </div>
                 <div>
-                  Condense routine updates: {preferences.condenseRoutineUpdates ? 'On' : 'Off'}
+                  Condense routine updates:{' '}
+                  {preferences.condenseRoutineUpdates ? 'On' : 'Off'}
                 </div>
-                <div>Resume latest report: {preferences.autoOpenLatestReport ? 'On' : 'Off'}</div>
-                <div>Enable vision audits: {preferences.allowVisionAudits ? 'On' : 'Off'}</div>
+                <div>
+                  Resume latest report:{' '}
+                  {preferences.autoOpenLatestReport ? 'On' : 'Off'}
+                </div>
+                <div>
+                  Enable vision audits:{' '}
+                  {preferences.allowVisionAudits ? 'On' : 'Off'}
+                </div>
               </div>
             </div>
-            <div className='p-5 bg-theme-secondary/50 border border-border-primary rounded-[1.5rem]'>
+            <div className='rounded border border-border-primary bg-theme-secondary p-5'>
               <div className='text-xs font-bold uppercase tracking-widest text-text-secondary mb-2'>
                 Persistence
               </div>
               <div className='text-sm text-text-primary font-medium'>
-                Changes are stored locally in your browser and each toggle now maps to visible workspace behavior instead of placeholder email settings.
+                Changes are stored locally in your browser and each toggle now
+                maps to visible workspace behavior instead of placeholder email
+                settings.
               </div>
             </div>
-            <div className='p-5 bg-theme-secondary/50 border border-border-primary rounded-[1.5rem]'>
-              <div className='text-xs font-bold uppercase tracking-widest text-text-secondary mb-2'>
-                AI routing policy
-              </div>
-              <div className='space-y-3 text-sm text-text-primary font-medium'>
-                <div>{AI_POLICY_SUMMARY}</div>
-                <div>
-                  Text tasks: {AI_MODEL_ROUTING.text.id} for {AI_MODEL_ROUTING.text.usage}.
-                </div>
-                <div>
-                  Vision audits: {AI_MODEL_ROUTING.vision.id} for {AI_MODEL_ROUTING.vision.usage}.
-                </div>
-              </div>
-            </div>
+            {/* Removed static AI routing policy display to keep settings focused on functional toggles only. */}
           </div>
         </section>
       </div>
     </PanelShell>
   );
 }
-
-
