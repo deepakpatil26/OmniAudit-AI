@@ -36,13 +36,7 @@ A quick tour — click images to open the full versions.
    </figure>
 </div>
 
-## Animated demo
-
-A small auto-generated walkthrough of the app experience.
-
-![Demo](./public/demo.gif)
-
-Quick start
+## Quick start
 
 1. Clone and install
 
@@ -77,9 +71,5 @@ Notes
 
 - Keep `.env` secret. Rotate keys if accidentally committed.
 - See [CHANGELOG.md](./CHANGELOG.md) for release notes.
-
-Logo
-
-![OmniAudit](./public/light-logo.png)
 
 Enjoy — ping me if you want a one-click deploy script or a short demo video.
