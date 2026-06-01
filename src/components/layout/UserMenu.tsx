@@ -35,18 +35,44 @@ export const UserMenu: React.FC<UserMenuProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const menuItemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const buttonId = 'user-menu-toggle';
   const menuId = 'user-menu-dropdown';
 
-  // Close menu when clicking outside
+  const closeMenu = (restoreFocus = false) => {
+    setIsOpen(false);
+    if (restoreFocus) {
+      menuButtonRef.current?.focus();
+    }
+  };
+
+  const focusMenuItem = (index: number) => {
+    const item = menuItemRefs.current[index];
+    item?.focus();
+  };
+
+  const getFocusedIndex = () =>
+    menuItemRefs.current.findIndex((item) => item === document.activeElement);
+
+  const setMenuItemRef =
+    (index: number) => (node: HTMLButtonElement | null) => {
+      menuItemRefs.current[index] = node;
+    };
+
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
+
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   useEffect(() => {
@@ -54,7 +80,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setIsOpen(false);
+        closeMenu(true);
       }
     };
 
@@ -62,19 +88,62 @@ export const UserMenu: React.FC<UserMenuProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const timer = window.setTimeout(() => {
+      focusMenuItem(0);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [isOpen]);
+
+  const handleMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const activeIndex = getFocusedIndex();
+    const maxIndex = menuItemRefs.current.length - 1;
+
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+      return;
+    }
+
+    event.preventDefault();
+
+    let nextIndex = activeIndex;
+
+    if (event.key === 'ArrowDown') {
+      nextIndex =
+        activeIndex < 0 || activeIndex === maxIndex ? 0 : activeIndex + 1;
+    } else if (event.key === 'ArrowUp') {
+      nextIndex = activeIndex <= 0 ? maxIndex : activeIndex - 1;
+    } else if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = maxIndex;
+    }
+
+    focusMenuItem(nextIndex);
+  };
+
   return (
     <div
       className='relative'
       ref={menuRef}>
       <button
         id={buttonId}
+        ref={menuButtonRef}
         type='button'
         aria-haspopup='menu'
         aria-controls={menuId}
         aria-expanded={isOpen}
         aria-label={isOpen ? 'Close user menu' : 'Open user menu'}
-        onClick={() => setIsOpen(!isOpen)}
-        className='group flex items-center gap-2 rounded border border-border-primary bg-theme-primary p-1 pl-2 pr-2 transition-all hover:border-amber-500/50 hover:bg-accent-primary-soft sm:pl-3'>
+        onClick={() => setIsOpen((current) => !current)}
+        onKeyDown={(event) => {
+          if (event.key === 'ArrowDown') {
+            setIsOpen(true);
+          }
+        }}
+        style={{ touchAction: 'manipulation' }}
+        className='group flex min-h-[44px] min-w-[44px] items-center gap-2 rounded border border-border-primary bg-theme-primary p-1 pl-2 pr-2 transition-all hover:border-amber-500/50 hover:bg-accent-primary-soft sm:pl-3'>
         <div className='hidden sm:flex flex-col items-end mr-1 text-right'>
           <span className='text-[10px] font-bold uppercase leading-none tracking-widest text-text-primary'>
             {user.displayName?.split(' ')[0] || 'Expert'}
@@ -107,8 +176,8 @@ export const UserMenu: React.FC<UserMenuProps> = ({
             aria-labelledby={buttonId}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className='absolute right-0 top-full z-50 mt-3 w-[min(16rem,calc(100vw-1rem))] overflow-hidden rounded border border-border-primary bg-theme-primary shadow-2xl shadow-black/30'>
-            {/* Header info */}
+            className='absolute right-0 top-full z-50 mt-3 w-[min(16rem,calc(100vw-1rem))] overflow-hidden rounded border border-border-primary bg-theme-primary shadow-2xl shadow-black/30'
+            onKeyDown={handleMenuKeyDown}>
             <div className='border-b border-border-primary bg-theme-secondary p-5'>
               <div className='mb-1 text-[9px] font-bold uppercase tracking-widest text-[var(--accent-primary)]'>
                 Certified Auditor
@@ -120,10 +189,11 @@ export const UserMenu: React.FC<UserMenuProps> = ({
 
             <div className='p-2'>
               <button
+                ref={setMenuItemRef(0)}
                 type='button'
                 role='menuitem'
                 onClick={() => {
-                  setIsOpen(false);
+                  closeMenu();
                   onOpenProfile();
                 }}
                 className='group flex w-full items-center justify-between rounded px-4 py-3 text-sm font-bold text-text-secondary transition-colors hover:bg-accent-primary-soft hover:text-text-primary'>
@@ -134,12 +204,13 @@ export const UserMenu: React.FC<UserMenuProps> = ({
               </button>
 
               <button
+                ref={setMenuItemRef(1)}
                 type='button'
                 role='menuitemcheckbox'
                 aria-checked={isDarkMode}
-                onClick={(e) => {
-                  e.stopPropagation();
+                onClick={() => {
                   onToggleDarkMode();
+                  closeMenu();
                 }}
                 className='group flex w-full items-center justify-between rounded px-4 py-3 text-sm font-semibold text-text-secondary transition-colors hover:bg-accent-primary-soft hover:text-text-primary'>
                 <div className='flex items-center gap-3'>
@@ -164,10 +235,11 @@ export const UserMenu: React.FC<UserMenuProps> = ({
               </button>
 
               <button
+                ref={setMenuItemRef(2)}
                 type='button'
                 role='menuitem'
                 onClick={() => {
-                  setIsOpen(false);
+                  closeMenu();
                   onOpenUpdates();
                 }}
                 className='group flex w-full items-center justify-between rounded px-4 py-3 text-sm font-bold text-text-secondary transition-colors hover:bg-accent-primary-soft hover:text-text-primary'>
@@ -183,10 +255,11 @@ export const UserMenu: React.FC<UserMenuProps> = ({
               </button>
 
               <button
+                ref={setMenuItemRef(3)}
                 type='button'
                 role='menuitem'
                 onClick={() => {
-                  setIsOpen(false);
+                  closeMenu();
                   onOpenSettings();
                 }}
                 className='group flex w-full items-center justify-between rounded px-4 py-3 text-sm font-bold text-text-secondary transition-colors hover:bg-accent-primary-soft hover:text-text-primary'>
@@ -199,10 +272,11 @@ export const UserMenu: React.FC<UserMenuProps> = ({
 
             <div className='border-t border-border-primary bg-theme-secondary p-2'>
               <button
+                ref={setMenuItemRef(4)}
                 type='button'
                 role='menuitem'
                 onClick={() => {
-                  setIsOpen(false);
+                  closeMenu();
                   onLogout();
                 }}
                 className='group flex w-full items-center gap-3 rounded px-4 py-3 text-sm font-bold text-red-500 transition-all hover:bg-red-500/10'>

@@ -61,7 +61,6 @@ A quick tour — click images to open the full versions.
 - `npm run preview` — preview build
 - `npm run lint` — TypeScript checks
 - `npm test` — run unit tests
-- `npm run make:gif` — regenerate `public/demo.gif` from screenshots
 
 ## CI & tests
 
