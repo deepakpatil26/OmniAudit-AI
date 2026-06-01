@@ -54,7 +54,7 @@ A quick tour — click images to open the full versions.
    npm run dev
    ```
 
-Helpful scripts
+## Helpful scripts
 
 - `npm run dev` — dev server
 - `npm run build` — production build
@@ -63,13 +63,12 @@ Helpful scripts
 - `npm test` — run unit tests
 - `npm run make:gif` — regenerate `public/demo.gif` from screenshots
 
-CI & tests
+## CI & tests
 
 This repo includes a GitHub Actions workflow to run `lint` + `test` on pushes to `main`.
 
-Notes
+## Notes
 
 - Keep `.env` secret. Rotate keys if accidentally committed.
 - See [CHANGELOG.md](./CHANGELOG.md) for release notes.
-
-Enjoy — ping me if you want a one-click deploy script or a short demo video.
+- Contributions welcome! Open issues or PRs for bugs, features, or improvements.
